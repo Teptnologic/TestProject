@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoL Damage Calculator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a0e14;
+      color: #c8cdd3;
+      min-height: 100vh;
+    }
+
+    /* --- Header --- */
+    header {
+      background: linear-gradient(135deg, #1a1f2e, #0d1117);
+      border-bottom: 1px solid #c89b3c;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 20px;
+      color: #c89b3c;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    header nav a {
+      color: #8b92a0;
+      text-decoration: none;
+      margin-left: 24px;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    header nav a:hover { color: #c89b3c; }
+
+    /* --- Main Layout --- */
+    .main-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 16px;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* --- Card Base --- */
+    .card {
+      background: #13171f;
+      border: 1px solid #2a2f3a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: #1a1f2e;
+      padding: 12px 16px;
+      border-bottom: 1px solid #2a2f3a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header h2 {
+      font-size: 14px;
+      color: #c89b3c;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .card-body { padding: 16px; }
+
+    /* --- Your Champion Section --- */
+    .champion-select {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .champion-portrait {
+      width: 80px;
+      height: 80px;
+      background: #1e2330;
+      border: 2px solid #c89b3c;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .champion-portrait span {
+      font-size: 11px;
+      color: #5a6270;
+      text-align: center;
+    }
+
+    .champion-info { flex: 1; }
+
+    .champion-name-input {
+      width: 100%;
+      background: #1e2330;
+      border: 1px solid #2a2f3a;
+      color: #c8cdd3;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .champion-name-input:focus {
+      outline: none;
+      border-color: #c89b3c;
+    }
+
+    .level-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .level-control label {
+      font-size: 12px;
+      color: #8b92a0;
+      text-transform: uppercase;
+    }
+
+    .level-slider {
+      flex: 1;
+      accent-color: #c89b3c;
+    }
+
+    .level-value {
+      background: #1e2330;
+      border: 1px solid #2a2f3a;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 14px;
+      color: #c89b3c;
+      font-weight: 700;
+      min-width: 36px;
+      text-align: center;
+    }
+
+    /* --- Abilities --- */
+    .abilities-section { margin-top: 16px; }
+
+    .abilities-section h3 {
+      font-size: 12px;
+      color: #8b92a0;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .ability-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .ability-box {
+      flex: 1;
+      text-align: center;
+    }
+
+    .ability-icon {
+      width: 44px;
+      height: 44px;
+      background: #1e2330;
+      border: 2px solid #2a2f3a;
+      border-radius: 6px;
+      margin: 0 auto 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .ability-icon:hover { border-color: #c89b3c; }
+
+    .ability-icon span {
+      font-size: 16px;
+      font-weight: 700;
+      color: #5a6270;
+    }
+
+    .ability-rank {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .rank-btn {
+      width: 20px;
+      height: 20px;
+      background: #1e2330;
+      border: 1px solid #2a2f3a;
+      color: #8b92a0;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rank-btn:hover { border-color: #c89b3c; color: #c89b3c; }
+
+    .rank-value {
+      font-size: 13px;
+      color: #c8cdd3;
+      min-width: 14px;
+      text-align: center;
+    }
+
+    .ability-label {
+      font-size: 10px;
+      color: #5a6270;
+      margin-top: 2px;
+    }
+
+    /* --- Items --- */
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+
+    .item-slot {
+      aspect-ratio: 1;
+      background: #1e2330;
+      border: 1px solid #2a2f3a;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+
+    .item-slot:hover { border-color: #c89b3c; }
+
+    .item-slot span {
+      font-size: 20px;
+      color: #2a2f3a;
+    }
+
+    .item-slot.filled {
+      border-color: #3d4450;
+      background: #1e2330;
+    }
+
+    .item-slot.filled .item-placeholder-name {
+      font-size: 9px;
+      color: #8b92a0;
+      text-align: center;
+      padding: 4px;
+    }
+
+    /* --- Stats Display --- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: #1a1f2e;
+      border-radius: 4px;
+    }
+
+    .stat-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .stat-icon.ad { background: #e74c3c; }
+    .stat-icon.ap { background: #9b59b6; }
+    .stat-icon.as { background: #f39c12; }
+    .stat-icon.crit { background: #e67e22; }
+    .stat-icon.lethality { background: #c0392b; }
+    .stat-icon.mpen { background: #8e44ad; }
+    .stat-icon.hp { background: #27ae60; }
+    .stat-icon.armor { background: #f1c40f; }
+    .stat-icon.mr { background: #3498db; }
+    .stat-icon.cdr { background: #1abc9c; }
+
+    .stat-label {
+      font-size: 11px;
+      color: #8b92a0;
+    }
+
+    .stat-value {
+      font-size: 12px;
+      color: #c8cdd3;
+      margin-left: auto;
+      font-weight: 600;
+    }
+
+    .stat-bonus {
+      color: #27ae60;
+      font-size: 11px;
+    }
+
+    /* --- Target Section --- */
+    .target-toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 14px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: #1e2330;
+      border: 1px solid #2a2f3a;
+      color: #8b92a0;
+      font-size: 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn:first-child { border-radius: 6px 0 0 6px; }
+    .toggle-btn:last-child { border-radius: 0 6px 6px 0; }
+
+    .toggle-btn.active {
+      background: #c89b3c;
+      border-color: #c89b3c;
+      color: #0a0e14;
+      font-weight: 600;
+    }
+
+    .dummy-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .dummy-stat-group label {
+      font-size: 11px;
+      color: #8b92a0;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .dummy-stat-group input {
+      width: 100%;
+      background: #1e2330;
+      border: 1px solid #2a2f3a;
+      color: #c8cdd3;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .dummy-stat-group input:focus {
+      outline: none;
+      border-color: #c89b3c;
+    }
+
+    .enemy-champion-section {
+      display: none;
+    }
+
+    .enemy-champion-section.active {
+      display: block;
+    }
+
+    /* --- Combo Builder --- */
+    .combo-builder { grid-column: 1 / -1; }
+
+    .combo-sequence {
+      display: flex;
+      gap: 8px;
+      padding: 16px;
+      background: #1a1f2e;
+      border-radius: 6px;
+      min-height: 72px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .combo-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .combo-icon {
+      width: 44px;
+      height: 44px;
+      background: #13171f;
+      border: 2px solid #c89b3c;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: #c89b3c;
+      position: relative;
+    }
+
+    .combo-step-number {
+      font-size: 9px;
+      color: #5a6270;
+    }
+
+    .combo-arrow {
+      color: #2a2f3a;
+      font-size: 18px;
+      margin: 0 2px;
+      align-self: center;
+    }
+
+    .combo-add-btn {
+      width: 44px;
+      height: 44px;
+      background: transparent;
+      border: 2px dashed #2a2f3a;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #5a6270;
+      font-size: 20px;
+      transition: all 0.2s;
+    }
+
+    .combo-add-btn:hover {
+      border-color: #c89b3c;
+      color: #c89b3c;
+    }
+
+    .combo-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .combo-btn {
+      padding: 8px 16px;
+      border: 1px solid #2a2f3a;
+      background: #1e2330;
+      color: #8b92a0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .combo-btn:hover { border-color: #c89b3c; color: #c89b3c; }
+
+    .combo-btn.primary {
+      background: #c89b3c;
+      border-color: #c89b3c;
+      color: #0a0e14;
+      font-weight: 600;
+    }
+
+    .combo-btn.primary:hover { background: #daa940; }
+
+    /* --- Damage Output --- */
+    .damage-output { grid-column: 1 / -1; }
+
+    .damage-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .damage-total-card {
+      background: #1a1f2e;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid #2a2f3a;
+    }
+
+    .damage-total-card.main {
+      border-color: #c89b3c;
+    }
+
+    .damage-total-label {
+      font-size: 11px;
+      color: #8b92a0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .damage-total-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #e74c3c;
+    }
+
+    .damage-total-card.main .damage-total-value {
+      color: #c89b3c;
+      font-size: 32px;
+    }
+
+    .damage-total-value.physical { color: #e74c3c; }
+    .damage-total-value.magic { color: #9b59b6; }
+    .damage-total-value.truedmg { color: #ecf0f1; }
+
+    .damage-sub {
+      font-size: 11px;
+      color: #5a6270;
+      margin-top: 4px;
+    }
+
+    /* --- Damage Breakdown Table --- */
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .breakdown-table th {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #8b92a0;
+      text-transform: uppercase;
+      border-bottom: 1px solid #2a2f3a;
+      letter-spacing: 0.5px;
+    }
+
+    .breakdown-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+      border-bottom: 1px solid #1a1f2e;
+    }
+
+    .breakdown-table tr:hover { background: #1a1f2e; }
+
+    .dmg-type-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .dmg-type-badge.physical { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
+    .dmg-type-badge.magic { background: rgba(155, 89, 182, 0.15); color: #9b59b6; }
+    .dmg-type-badge.truedmg { background: rgba(236, 240, 241, 0.15); color: #ecf0f1; }
+
+    .dmg-bar {
+      height: 6px;
+      background: #1e2330;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .dmg-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .dmg-bar-fill.physical { background: #e74c3c; }
+    .dmg-bar-fill.magic { background: #9b59b6; }
+
+    /* --- HP Bar Preview --- */
+    .hp-bar-section {
+      margin-top: 16px;
+      padding: 16px;
+      background: #1a1f2e;
+      border-radius: 8px;
+    }
+
+    .hp-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #8b92a0;
+      margin-bottom: 6px;
+    }
+
+    .hp-bar {
+      height: 28px;
+      background: #2a2f3a;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hp-bar-remaining {
+      height: 100%;
+      background: linear-gradient(90deg, #27ae60, #2ecc71);
+      border-radius: 4px;
+      width: 35%;
+      transition: width 0.4s;
+    }
+
+    .hp-bar-damage {
+      position: absolute;
+      top: 0;
+      right: 35%;
+      height: 100%;
+      background: rgba(231, 76, 60, 0.4);
+      width: 65%;
+      border-left: 2px solid #e74c3c;
+    }
+
+    .hp-bar-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .overkill-tag {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 12px;
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid #e74c3c;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #e74c3c;
+      font-weight: 600;
+    }
+
+    .kill-tag {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 12px;
+      background: rgba(39, 174, 96, 0.15);
+      border: 1px solid #27ae60;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #27ae60;
+      font-weight: 600;
+    }
+
+    /* --- Runes mini section --- */
+    .runes-section { margin-top: 14px; }
+
+    .runes-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .rune-slot {
+      width: 36px;
+      height: 36px;
+      background: #1e2330;
+      border: 1px solid #2a2f3a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .rune-slot:hover { border-color: #c89b3c; }
+
+    .rune-slot span {
+      font-size: 10px;
+      color: #5a6270;
+    }
+
+    .rune-slot.keystone {
+      width: 44px;
+      height: 44px;
+      border-width: 2px;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 900px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+      .combo-builder, .damage-output {
+        grid-column: 1;
+      }
+      .damage-summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====== HEADER ====== -->
+  <header>
+    <h1>LoL Damage Calc</h1>
+    <nav>
+      <a href="#">Calculator</a>
+      <a href="#">Champions</a>
+      <a href="#">Items</a>
+      <a href="#">About</a>
+    </nav>
+  </header>
+
+  <!-- ====== MAIN LAYOUT ====== -->
+  <div class="main-container">
+
+    <!-- ====== YOUR CHAMPION ====== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Your Champion</h2>
+      </div>
+      <div class="card-body">
+        <div class="champion-select">
+          <div class="champion-portrait">
+            <span>Click to<br>select</span>
+          </div>
+          <div class="champion-info">
+            <input type="text" class="champion-name-input" placeholder="Search champion..." />
+            <div class="level-control">
+              <label>Level</label>
+              <input type="range" class="level-slider" min="1" max="18" value="6" />
+              <span class="level-value">6</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Abilities -->
+        <div class="abilities-section">
+          <h3>Abilities</h3>
+          <div class="ability-row">
+            <div class="ability-box">
+              <div class="ability-icon"><span>P</span></div>
+              <div class="ability-label">Passive</div>
+            </div>
+            <div class="ability-box">
+              <div class="ability-icon"><span>Q</span></div>
+              <div class="ability-rank">
+                <button class="rank-btn">-</button>
+                <span class="rank-value">3</span>
+                <button class="rank-btn">+</button>
+              </div>
+              <div class="ability-label">Rank 3</div>
+            </div>
+            <div class="ability-box">
+              <div class="ability-icon"><span>W</span></div>
+              <div class="ability-rank">
+                <button class="rank-btn">-</button>
+                <span class="rank-value">1</span>
+                <button class="rank-btn">+</button>
+              </div>
+              <div class="ability-label">Rank 1</div>
+            </div>
+            <div class="ability-box">
+              <div class="ability-icon"><span>E</span></div>
+              <div class="ability-rank">
+                <button class="rank-btn">-</button>
+                <span class="rank-value">2</span>
+                <button class="rank-btn">+</button>
+              </div>
+              <div class="ability-label">Rank 2</div>
+            </div>
+            <div class="ability-box">
+              <div class="ability-icon"><span>R</span></div>
+              <div class="ability-rank">
+                <button class="rank-btn">-</button>
+                <span class="rank-value">1</span>
+                <button class="rank-btn">+</button>
+              </div>
+              <div class="ability-label">Rank 1</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items -->
+        <div class="abilities-section">
+          <h3>Items</h3>
+          <div class="items-grid">
+            <div class="item-slot filled"><div class="item-placeholder-name">Luden's Tempest</div></div>
+            <div class="item-slot filled"><div class="item-placeholder-name">Sorcerer's Shoes</div></div>
+            <div class="item-slot"><span>+</span></div>
+            <div class="item-slot"><span>+</span></div>
+            <div class="item-slot"><span>+</span></div>
+            <div class="item-slot"><span>+</span></div>
+          </div>
+        </div>
+
+        <!-- Computed Stats -->
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon ad"></div>
+            <span class="stat-label">AD</span>
+            <span class="stat-value">68 <span class="stat-bonus">(+0)</span></span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon ap"></div>
+            <span class="stat-label">AP</span>
+            <span class="stat-value">0 <span class="stat-bonus">(+120)</span></span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon lethality"></div>
+            <span class="stat-label">Lethality</span>
+            <span class="stat-value">0</span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon mpen"></div>
+            <span class="stat-label">Magic Pen</span>
+            <span class="stat-value">18</span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon as"></div>
+            <span class="stat-label">Atk Spd</span>
+            <span class="stat-value">0.625</span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon cdr"></div>
+            <span class="stat-label">Ability Haste</span>
+            <span class="stat-value">20</span>
+          </div>
+        </div>
+
+        <!-- Runes -->
+        <div class="runes-section">
+          <h3 style="font-size:12px; color:#8b92a0; text-transform:uppercase; margin-bottom:10px;">Runes</h3>
+          <div class="runes-row">
+            <div class="rune-slot keystone"><span>Key</span></div>
+            <div class="rune-slot"><span>1</span></div>
+            <div class="rune-slot"><span>2</span></div>
+            <div class="rune-slot"><span>3</span></div>
+            <div class="rune-slot"><span>4</span></div>
+            <div class="rune-slot"><span>5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== TARGET ====== -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Target</h2>
+      </div>
+      <div class="card-body">
+        <!-- Toggle: Dummy vs Champion -->
+        <div class="target-toggle">
+          <button class="toggle-btn active" onclick="showDummy()">Target Dummy</button>
+          <button class="toggle-btn" onclick="showEnemy()">Enemy Champion</button>
+        </div>
+
+        <!-- Dummy mode -->
+        <div id="dummy-mode">
+          <div class="dummy-stats">
+            <div class="dummy-stat-group">
+              <label>Health</label>
+              <input type="number" value="2000" />
+            </div>
+            <div class="dummy-stat-group">
+              <label>Armor</label>
+              <input type="number" value="80" />
+            </div>
+            <div class="dummy-stat-group">
+              <label>Magic Resist</label>
+              <input type="number" value="45" />
+            </div>
+          </div>
+          <div class="dummy-stats" style="margin-top: 10px;">
+            <div class="dummy-stat-group">
+              <label>Bonus HP</label>
+              <input type="number" value="0" />
+            </div>
+            <div class="dummy-stat-group">
+              <label>Level</label>
+              <input type="number" value="9" min="1" max="18" />
+            </div>
+            <div class="dummy-stat-group">
+              <label>Shield</label>
+              <input type="number" value="0" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Enemy champion mode -->
+        <div id="enemy-mode" class="enemy-champion-section">
+          <div class="champion-select">
+            <div class="champion-portrait" style="border-color: #e74c3c;">
+              <span>Click to<br>select</span>
+            </div>
+            <div class="champion-info">
+              <input type="text" class="champion-name-input" placeholder="Search enemy champion..." />
+              <div class="level-control">
+                <label>Level</label>
+                <input type="range" class="level-slider" min="1" max="18" value="9" />
+                <span class="level-value">9</span>
+              </div>
+            </div>
+          </div>
+          <div class="abilities-section">
+            <h3>Enemy Items</h3>
+            <div class="items-grid">
+              <div class="item-slot"><span>+</span></div>
+              <div class="item-slot"><span>+</span></div>
+              <div class="item-slot"><span>+</span></div>
+              <div class="item-slot"><span>+</span></div>
+              <div class="item-slot"><span>+</span></div>
+              <div class="item-slot"><span>+</span></div>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-icon hp"></div>
+              <span class="stat-label">HP</span>
+              <span class="stat-value">1850</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon armor"></div>
+              <span class="stat-label">Armor</span>
+              <span class="stat-value">72</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon mr"></div>
+              <span class="stat-label">Magic Resist</span>
+              <span class="stat-value">42</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== COMBO BUILDER ====== -->
+    <div class="card combo-builder">
+      <div class="card-header">
+        <h2>Combo Builder</h2>
+        <span style="font-size: 11px; color: #5a6270;">Drag abilities or click + to add</span>
+      </div>
+      <div class="card-body">
+        <div class="combo-sequence">
+          <div class="combo-step">
+            <div class="combo-icon">E</div>
+            <span class="combo-step-number">1</span>
+          </div>
+          <span class="combo-arrow">→</span>
+          <div class="combo-step">
+            <div class="combo-icon">Q</div>
+            <span class="combo-step-number">2</span>
+          </div>
+          <span class="combo-arrow">→</span>
+          <div class="combo-step">
+            <div class="combo-icon" style="border-color: #f39c12; color: #f39c12;">AA</div>
+            <span class="combo-step-number">3</span>
+          </div>
+          <span class="combo-arrow">→</span>
+          <div class="combo-step">
+            <div class="combo-icon">W</div>
+            <span class="combo-step-number">4</span>
+          </div>
+          <span class="combo-arrow">→</span>
+          <div class="combo-step">
+            <div class="combo-icon" style="border-color: #e74c3c; color: #e74c3c;">R</div>
+            <span class="combo-step-number">5</span>
+          </div>
+          <span class="combo-arrow">→</span>
+          <div class="combo-step">
+            <div class="combo-icon" style="border-color: #f39c12; color: #f39c12;">AA</div>
+            <span class="combo-step-number">6</span>
+          </div>
+          <button class="combo-add-btn">+</button>
+        </div>
+        <div class="combo-controls">
+          <button class="combo-btn primary">Calculate Damage</button>
+          <button class="combo-btn">Clear Combo</button>
+          <button class="combo-btn">Save Combo</button>
+          <button class="combo-btn">Load Preset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== DAMAGE OUTPUT ====== -->
+    <div class="card damage-output">
+      <div class="card-header">
+        <h2>Damage Results</h2>
+        <span style="font-size: 11px; color: #5a6270;">After resistances</span>
+      </div>
+      <div class="card-body">
+        <!-- Summary Cards -->
+        <div class="damage-summary">
+          <div class="damage-total-card main">
+            <div class="damage-total-label">Total Damage</div>
+            <div class="damage-total-value">1,847</div>
+            <div class="damage-sub">vs 2,000 HP target</div>
+          </div>
+          <div class="damage-total-card">
+            <div class="damage-total-label">Physical</div>
+            <div class="damage-total-value physical">312</div>
+            <div class="damage-sub">16.9%</div>
+          </div>
+          <div class="damage-total-card">
+            <div class="damage-total-label">Magic</div>
+            <div class="damage-total-value magic">1,435</div>
+            <div class="damage-sub">77.7%</div>
+          </div>
+          <div class="damage-total-card">
+            <div class="damage-total-label">True</div>
+            <div class="damage-total-value truedmg">100</div>
+            <div class="damage-sub">5.4%</div>
+          </div>
+        </div>
+
+        <!-- Breakdown Table -->
+        <table class="breakdown-table">
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Ability</th>
+              <th>Type</th>
+              <th>Raw Damage</th>
+              <th>After Resist</th>
+              <th>% of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>E</strong> - Lucent Singularity</td>
+              <td><span class="dmg-type-badge magic">Magic</span></td>
+              <td>280</td>
+              <td>215</td>
+              <td>
+                11.6%
+                <div class="dmg-bar"><div class="dmg-bar-fill magic" style="width: 15%"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>Q</strong> - Light Binding</td>
+              <td><span class="dmg-type-badge magic">Magic</span></td>
+              <td>310</td>
+              <td>238</td>
+              <td>
+                12.9%
+                <div class="dmg-bar"><div class="dmg-bar-fill magic" style="width: 17%"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>AA</strong> + Passive</td>
+              <td><span class="dmg-type-badge physical">Physical</span></td>
+              <td>168</td>
+              <td>112</td>
+              <td>
+                6.1%
+                <div class="dmg-bar"><div class="dmg-bar-fill physical" style="width: 8%"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><strong>W</strong> - Prismatic Barrier</td>
+              <td colspan="3" style="color: #5a6270; font-style: italic;">Shield only — no damage</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><strong>R</strong> - Final Spark</td>
+              <td><span class="dmg-type-badge magic">Magic</span></td>
+              <td>640</td>
+              <td>492</td>
+              <td>
+                26.6%
+                <div class="dmg-bar"><div class="dmg-bar-fill magic" style="width: 34%"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><strong>AA</strong> + Passive</td>
+              <td><span class="dmg-type-badge magic">Magic</span></td>
+              <td>250</td>
+              <td>192</td>
+              <td>
+                10.4%
+                <div class="dmg-bar"><div class="dmg-bar-fill magic" style="width: 13%"></div></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- HP Bar -->
+        <div class="hp-bar-section">
+          <div class="hp-bar-label">
+            <span>Target HP after combo</span>
+            <span>153 / 2,000 HP</span>
+          </div>
+          <div class="hp-bar">
+            <div class="hp-bar-remaining" style="width: 7.6%"></div>
+            <div class="hp-bar-damage" style="right: 7.6%; width: 92.4%"></div>
+            <span class="hp-bar-text">1,847 damage dealt</span>
+          </div>
+          <span class="kill-tag">TARGET SURVIVES — 153 HP remaining</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function showDummy() {
+      document.getElementById('dummy-mode').style.display = 'block';
+      document.getElementById('enemy-mode').classList.remove('active');
+      document.querySelectorAll('.target-toggle .toggle-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === 0);
+      });
+    }
+
+    function showEnemy() {
+      document.getElementById('dummy-mode').style.display = 'none';
+      document.getElementById('enemy-mode').classList.add('active');
+      document.querySelectorAll('.target-toggle .toggle-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === 1);
+      });
+    }
+
+    document.querySelectorAll('.level-slider').forEach(slider => {
+      slider.addEventListener('input', function() {
+        this.closest('.level-control').querySelector('.level-value').textContent = this.value;
+      });
+    });
+  </script>
+
+</body>
+</html>
