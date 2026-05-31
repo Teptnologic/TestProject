@@ -62,64 +62,51 @@ async function fetchChampionDetail(version, championId) {
   };
 }
 
-// Spell-related fields to extract from bin.json entries
-const SPELL_FIELDS = new Set([
-  'mDataValues',
-  'mSpellCalculations',
-  'mCoefficient',
-  'mEffectAmount',
-  'mCastTime',
-  'mCastFrame',
-  'mChannelDuration',
-  'mCooldownTime',
-  'mManaCost',
-  'mCastRange',
-  'mCastRangeDisplayOverride',
-  'mMissileSpeed',
-  'mSpellTags',
-  'mScriptName',
-  'mSpellName',
+// Strip animation/VFX/audio noise from spell objects but keep all numeric and
+// calculation data intact (mDataValues, mSpellCalculations, mEffectAmount,
+// mCoefficient, mBuffName, mBuffs, mDataValueOverrides, etc.)
+const DROP_FIELDS = new Set([
   'mClientData',
+  'mLineMissileSpec',
+  'mMissileSpec',
+  'mMissileGraphics',
+  'mAnimationName',
+  'mSpellRevealsChampion',
+  'mTargetingType',
+  'mTargetingTypeOverride',
 ]);
 
-function looksLikeBotVariant(key) {
-  return /(?:Bot|Tutorial|URF|Sandbox|TFT|Arena|Cherry|Strawberry|Practice)/i.test(key);
-}
-
-function extractSpellData(obj) {
-  if (!obj || typeof obj !== 'object') return null;
-  if (Array.isArray(obj)) {
-    const mapped = obj.map(extractSpellData).filter((v) => v !== null && v !== undefined);
-    return mapped.length ? mapped : null;
-  }
+function stripNoise(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(stripNoise);
   const out = {};
-  let kept = false;
   for (const [k, v] of Object.entries(obj)) {
-    if (SPELL_FIELDS.has(k)) {
+    if (DROP_FIELDS.has(k)) continue;
+    if (typeof v === 'object' && v !== null) {
+      out[k] = stripNoise(v);
+    } else {
       out[k] = v;
-      kept = true;
-    } else if (k === 'mSpell' && typeof v === 'object') {
-      const inner = extractSpellData(v);
-      if (inner) {
-        out.mSpell = inner;
-        kept = true;
-      }
-    } else if (typeof v === 'object' && v !== null) {
-      const inner = extractSpellData(v);
-      if (inner && Object.keys(inner).length) {
-        out[k] = inner;
-        kept = true;
-      }
     }
   }
-  return kept ? out : null;
+  return out;
+}
+
+function looksLikeBotVariant(key) {
+  return /(?:Bot|Tutorial|URF|Sandbox|TFT|Arena|Cherry|Strawberry|Practice|OdysseyAugment)/i.test(
+    key
+  );
+}
+
+function looksLikeSpellEntry(key) {
+  // Real spell entries live under Characters/<Champ>/Spells/... and have mScriptName or mSpell
+  return key.startsWith('Characters/') && /\/Spells\//.test(key);
 }
 
 async function fetchCDragonChampion(key, championId) {
   const lc = championId.toLowerCase();
   const result = { spells: [] };
 
-  // Lightweight metadata endpoint
+  // Slim metadata endpoint (champion key, splash, etc.)
   try {
     const data = await fetchJSON(
       `${CDRAGON}/plugins/rcp-be-lol-game-data/global/default/v1/champions/${key}.json`
@@ -138,19 +125,38 @@ async function fetchCDragonChampion(key, championId) {
     console.warn(`\n  cdragon meta failed for ${championId}: ${err.message}`);
   }
 
-  // Rich game data: pull from bin.json, then aggressively filter
+  // Rich game data: keep full spell objects so we don't lose mDataValues etc.
   try {
     const bin = await fetchJSON(`${CDRAGON}/game/data/characters/${lc}/${lc}.bin.json`);
     const spellEntries = {};
     for (const [k, v] of Object.entries(bin)) {
       if (looksLikeBotVariant(k)) continue;
-      // Champion record (base stats) — keep selected fields
+
+      // CharacterRecords/Root holds base stats + spell name pointers
       if (k.includes('CharacterRecords/Root')) {
         spellEntries[k] = pickCharacterStats(v);
         continue;
       }
-      const extracted = extractSpellData(v);
-      if (extracted) spellEntries[k] = extracted;
+
+      // Spell entries: keep entire mSpell payload (with noise stripped)
+      if (looksLikeSpellEntry(k) && v && typeof v === 'object') {
+        const out = { mScriptName: v.mScriptName };
+        if (v.mSpell) out.mSpell = stripNoise(v.mSpell);
+        // Some champs put data at top level instead of under mSpell
+        for (const field of [
+          'mDataValues',
+          'mSpellCalculations',
+          'mCoefficient',
+          'mEffectAmount',
+          'mCooldownTime',
+          'mManaCost',
+          'mCastRange',
+          'mDataValueOverrides',
+        ]) {
+          if (v[field] !== undefined) out[field] = v[field];
+        }
+        spellEntries[k] = out;
+      }
     }
     result.bin = spellEntries;
   } catch (err) {
@@ -171,7 +177,7 @@ function pickCharacterStats(v) {
     'baseStaticMPRegen', 'mpRegenPerLevel',
     'attackSpeed', 'attackSpeedRatio', 'attackSpeedPerLevel',
     'attackRange', 'critDamageMultiplier',
-    'baseMoveSpeed', 'baseStaticHPRegen',
+    'baseMoveSpeed',
     'spellNames', 'extraSpells',
   ];
   const out = {};
