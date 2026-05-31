@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getChampion, getItem } from './data';
+import { ITEM_OVERRIDES } from './data/item-overrides';
 import meta from './data/generated/meta.json';
 import { totalStats, computeCombo } from './utils/damage';
 
@@ -27,26 +28,33 @@ const INITIAL_TARGET = {
   level: 11,
 };
 
+function resolveItems(itemIds) {
+  return itemIds.map((id) => {
+    if (!id) return null;
+    const item = getItem(id);
+    if (!item) return null;
+    const overrides = ITEM_OVERRIDES[id];
+    return overrides ? { ...item, _overrides: overrides } : item;
+  });
+}
+
 export default function App() {
   const [build, setBuild] = useState(INITIAL_BUILD);
   const [target, setTarget] = useState(INITIAL_TARGET);
 
-  // Resolve champion + items into denormalized objects
   const champion = build.championId ? getChampion(build.championId) : null;
-  const items = build.items.map((id) => (id ? getItem(id) : null));
+  const items = useMemo(() => resolveItems(build.items), [build.items]);
   const fullBuild = { ...build, champion, items };
 
-  // Compute attacker stats
   const stats = useMemo(() => {
     if (!champion) return null;
     return totalStats(champion.stats, build.level, items);
   }, [champion, build.level, items]);
 
-  // Compute combo damage
   const damageResult = useMemo(() => {
     if (!champion || !stats || !build.combo.length) return null;
-    return computeCombo(build.combo, champion, build.ranks, stats, target, build.level);
-  }, [champion, stats, build.combo, build.ranks, target, build.level]);
+    return computeCombo(build.combo, champion, build.ranks, stats, target, build.level, items);
+  }, [champion, stats, build.combo, build.ranks, target, build.level, items]);
 
   return (
     <>

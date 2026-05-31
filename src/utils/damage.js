@@ -1,6 +1,76 @@
 // Evaluate a spell's damage calculation against an attacker's stats.
 
-import { totalStats } from './stats.js';
+import { totalStats, baseStatsAtLevel } from './stats.js';
+
+// Compute auto-attack damage (physical = total AD)
+function computeAADamage(attacker, items) {
+  const results = [
+    { abilityKey: 'AA', abilityName: 'Auto Attack', raw: attacker.attackdamage, type: 'physical' },
+  ];
+  // On-hit item effects
+  for (const item of items || []) {
+    const ov = item?._overrides;
+    if (!ov?.passive) continue;
+    const p = ov.passive;
+    switch (p.type) {
+      case 'nashors':
+        results.push({
+          abilityKey: 'AA',
+          abilityName: `Nashor's On-Hit`,
+          raw: (p.baseDamage || 0) + (p.apRatio || 0) * (attacker.ap || 0),
+          type: 'magic',
+        });
+        break;
+      case 'witsEnd':
+        results.push({
+          abilityKey: 'AA',
+          abilityName: `Wit's End On-Hit`,
+          raw: p.baseDamage || 0,
+          type: 'magic',
+        });
+        break;
+      case 'bork': {
+        const currentHP = attacker._targetCurrentHP || attacker._targetMaxHP || 2000;
+        results.push({
+          abilityKey: 'AA',
+          abilityName: 'BotRK On-Hit',
+          raw: currentHP * (p.currentHPRatio || 0),
+          type: 'physical',
+        });
+        break;
+      }
+    }
+  }
+  return results;
+}
+
+// Compute spellblade proc (Sheen/Lich Bane/Trinity)
+function computeSpellbladeDamage(attacker, items) {
+  let best = null;
+  for (const item of items || []) {
+    const p = item?._overrides?.passive;
+    if (!p) continue;
+    let raw = 0;
+    let type = 'physical';
+    switch (p.type) {
+      case 'sheen':
+        raw = (attacker.baseAD || attacker.attackdamage) * (p.baseADRatio || 1);
+        break;
+      case 'trinity':
+        raw = (attacker.baseAD || attacker.attackdamage) * (p.baseADRatio || 2);
+        break;
+      case 'lichBane':
+        raw = (attacker.baseAD || attacker.attackdamage) * (p.baseADRatio || 0.75)
+            + (attacker.ap || 0) * (p.apRatio || 0.5);
+        type = 'magic';
+        break;
+      default:
+        continue;
+    }
+    if (!best || raw > best.raw) best = { raw, type, name: item.name };
+  }
+  return best;
+}
 
 // Pick the most relevant "damage" calculation from a spell's calculations map.
 function pickDamageCalc(calculations) {
@@ -109,21 +179,40 @@ export function applyResistance(rawDamage, type, target, attacker) {
 }
 
 // Sum a combo's worth of damage
-export function computeCombo(combo, champion, ranks, attackerStats, target, charLevel) {
+export function computeCombo(combo, champion, ranks, attackerStats, target, charLevel, items) {
   const steps = [];
   let totalPhys = 0, totalMagic = 0, totalTrue = 0;
-  for (const step of combo) {
-    const ability = champion.abilities.find((a) => a.key === step);
-    if (!ability) continue;
-    const rank = ranks[step] || 1;
-    const result = computeAbilityDamage(ability, rank, attackerStats, charLevel);
-    if (!result || !result.raw) continue;
+  let lastWasSpell = false;
+
+  function addDmg(result) {
     const post = applyResistance(result.raw, result.type, target, attackerStats);
     if (result.type === 'physical') totalPhys += post;
     else if (result.type === 'true') totalTrue += post;
     else totalMagic += post;
     steps.push({ ...result, post });
   }
+
+  for (const step of combo) {
+    if (step === 'AA') {
+      const aaResults = computeAADamage(attackerStats, items);
+      for (const r of aaResults) addDmg(r);
+      // Spellblade procs on AA after a spell cast
+      if (lastWasSpell) {
+        const sb = computeSpellbladeDamage(attackerStats, items);
+        if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
+      }
+      lastWasSpell = false;
+      continue;
+    }
+
+    const ability = champion.abilities.find((a) => a.key === step);
+    if (!ability) continue;
+    const rank = step === 'P' ? 1 : (ranks[step] || 1);
+    const result = computeAbilityDamage(ability, rank, attackerStats, charLevel);
+    if (result && result.raw) addDmg(result);
+    lastWasSpell = true;
+  }
+
   return {
     steps,
     physical: totalPhys,
@@ -133,4 +222,4 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   };
 }
 
-export { totalStats };
+export { totalStats, baseStatsAtLevel };

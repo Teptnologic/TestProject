@@ -22,6 +22,19 @@ export default function AbilityRow({ build, setBuild }) {
 
   return (
     <div className="ability-row">
+      {/* Auto Attack button */}
+      <div className="ability-box">
+        <div
+          className="ability-icon"
+          title="Auto Attack (click to add to combo)"
+          onClick={() => addToCombo('AA')}
+          style={{ borderColor: '#f39c12' }}
+        >
+          <span className="placeholder" style={{ color: '#f39c12', fontSize: '14px' }}>AA</span>
+        </div>
+        <div className="ability-rank"><span className="rank-value">—</span></div>
+        <div className="ability-label">Auto Atk</div>
+      </div>
       {champ.abilities.map((ability) => {
         const rank = build.ranks[ability.key] || (ability.key === 'P' ? 1 : 0);
         const iconUrl = ability.icon

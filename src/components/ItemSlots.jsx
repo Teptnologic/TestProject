@@ -102,8 +102,16 @@ export default function ItemSlots({ build, setBuild }) {
             <div className="item-results">
               {filtered.map((item) => (
                 <div key={item.id} className="item-result" onClick={() => pickItem(item)}>
-                  <span>{item.name}</span>
-                  <span className="stats">{summarizeStats(item.stats)}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img
+                      src={`${DDRAGON_IMG}/item/${item.id}.png`}
+                      alt=""
+                      style={{ width: 24, height: 24, borderRadius: 3 }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    {item.name}
+                  </span>
+                  <span className="stats">{item.gold}g — {summarizeStats(item.stats)}</span>
                 </div>
               ))}
             </div>

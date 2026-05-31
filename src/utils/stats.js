@@ -48,16 +48,40 @@ export function totalStats(champStats, level, items) {
   const base = baseStatsAtLevel(champStats, level);
   const bonus = { hp: 0, mp: 0, armor: 0, spellblock: 0, attackdamage: 0, ap: 0, crit: 0 };
   let asPct = 0;
+  let lethality = 0;
+  let flatMagicPen = 0;
+  let magicPenPct = 0;
+  let armorPenPct = 0;
+  let abilityHaste = 0;
+  let hasRabadons = false;
+
   for (const item of items || []) {
-    if (!item?.stats) continue;
-    for (const [riotKey, val] of Object.entries(item.stats)) {
-      const mapped = ITEM_STAT_MAP[riotKey];
-      if (!mapped) continue;
-      if (mapped === 'attackspeed_pct') asPct += val;
-      else if (mapped === 'movespeed_pct') { /* skip for now */ }
-      else bonus[mapped] = (bonus[mapped] || 0) + val;
+    if (!item) continue;
+    // Data Dragon flat stats
+    if (item.stats) {
+      for (const [riotKey, val] of Object.entries(item.stats)) {
+        const mapped = ITEM_STAT_MAP[riotKey];
+        if (!mapped) continue;
+        if (mapped === 'attackspeed_pct') asPct += val;
+        else if (mapped === 'movespeed_pct') { /* skip for now */ }
+        else bonus[mapped] = (bonus[mapped] || 0) + val;
+      }
+    }
+    // Manual overrides for pen, haste, passives
+    const ov = item._overrides;
+    if (ov) {
+      lethality += ov.lethality || 0;
+      flatMagicPen += ov.flatMagicPen || 0;
+      magicPenPct += ov.magicPenPct || 0;
+      armorPenPct += ov.armorPenPct || 0;
+      abilityHaste += ov.abilityHaste || 0;
+      if (ov.passive?.type === 'rabadons') hasRabadons = true;
     }
   }
+
+  let ap = bonus.ap;
+  if (hasRabadons) ap = Math.floor(ap * 1.35);
+
   return {
     ...base,
     hp: base.hp + bonus.hp,
@@ -65,10 +89,16 @@ export function totalStats(champStats, level, items) {
     armor: base.armor + bonus.armor,
     spellblock: base.spellblock + bonus.spellblock,
     attackdamage: base.attackdamage + bonus.attackdamage,
+    baseAD: base.attackdamage,
     bonusAD: bonus.attackdamage,
-    ap: bonus.ap,
+    ap,
     crit: base.crit + bonus.crit,
     attackspeed: base.attackspeed * (1 + asPct),
     bonusHP: bonus.hp,
+    lethality,
+    flatMagicPen,
+    magicPenPct,
+    armorPenPct,
+    abilityHaste,
   };
 }

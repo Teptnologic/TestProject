@@ -30,7 +30,8 @@ export default function ComboPanel({ build, setBuild }) {
         <div className="combo-sequence">
           {combo.length === 0 && <span className="combo-empty">No abilities yet — click Q/W/E/R above to build a combo</span>}
           {combo.map((key, idx) => {
-            const ability = champ?.abilities.find((a) => a.key === key);
+            const isAA = key === 'AA';
+            const ability = !isAA ? champ?.abilities.find((a) => a.key === key) : null;
             const iconUrl = ability?.icon
               ? (key === 'P'
                   ? `${DDRAGON_IMG}/passive/${ability.icon}`
@@ -39,8 +40,8 @@ export default function ComboPanel({ build, setBuild }) {
             return (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className="combo-step">
-                  <div className="combo-icon" title={ability?.name}>
-                    {iconUrl ? <img src={iconUrl} alt={key} /> : <span>{key}</span>}
+                  <div className="combo-icon" title={isAA ? 'Auto Attack' : ability?.name} style={isAA ? { borderColor: '#f39c12', color: '#f39c12' } : undefined}>
+                    {isAA ? <span>AA</span> : iconUrl ? <img src={iconUrl} alt={key} /> : <span>{key}</span>}
                   </div>
                   <span className="combo-step-number">{idx + 1}</span>
                   <button className="remove-step" onClick={() => removeStep(idx)}>×</button>
@@ -54,8 +55,8 @@ export default function ComboPanel({ build, setBuild }) {
           <button className="combo-btn" onClick={clearCombo}>Clear</button>
           {champ && (
             <>
-              <button className="combo-btn" onClick={() => presetCombo(['E', 'Q', 'R'])}>E → Q → R</button>
-              <button className="combo-btn" onClick={() => presetCombo(['Q', 'W', 'E', 'R'])}>Full combo</button>
+              <button className="combo-btn" onClick={() => presetCombo(['E', 'Q', 'AA', 'R'])}>E → Q → AA → R</button>
+              <button className="combo-btn" onClick={() => presetCombo(['Q', 'E', 'AA', 'W', 'R', 'AA'])}>Full + AA</button>
             </>
           )}
         </div>

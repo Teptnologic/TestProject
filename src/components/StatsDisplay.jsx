@@ -22,6 +22,11 @@ export default function StatsDisplay({ stats }) {
       <StatRow kind="mr" label="MR" value={stats.spellblock} bonus={0} />
       <StatRow kind="as" label="Atk Speed" value={Math.round(stats.attackspeed * 1000) / 1000} bonus={0} />
       <StatRow kind="crit" label="Crit %" value={stats.crit} bonus={0} />
+      {stats.lethality > 0 && <StatRow kind="ad" label="Lethality" value={stats.lethality} bonus={0} />}
+      {stats.flatMagicPen > 0 && <StatRow kind="ap" label="Flat M.Pen" value={stats.flatMagicPen} bonus={0} />}
+      {stats.magicPenPct > 0 && <StatRow kind="ap" label="% M.Pen" value={Math.round(stats.magicPenPct * 100)} bonus={0} />}
+      {stats.armorPenPct > 0 && <StatRow kind="ad" label="% Armor Pen" value={Math.round(stats.armorPenPct * 100)} bonus={0} />}
+      {stats.abilityHaste > 0 && <StatRow kind="mp" label="Ability Haste" value={stats.abilityHaste} bonus={0} />}
     </div>
   );
 }
