@@ -17,24 +17,29 @@ function computeAADamage(attacker, items) {
         results.push({
           abilityKey: 'AA',
           abilityName: `Nashor's On-Hit`,
-          raw: (p.baseDamage || 0) + (p.apRatio || 0) * (attacker.ap || 0),
+          raw: (p.flatOnHit || 0) + (p.apRatio || 0) * (attacker.ap || 0),
           type: 'magic',
         });
         break;
-      case 'witsEnd':
+      case 'witsEnd': {
+        const lvl = attacker.level || 1;
+        const min = p.flatOnHitMin || 15;
+        const max = p.flatOnHitMax || 80;
+        const dmg = min + (max - min) * ((lvl - 1) / 17);
         results.push({
           abilityKey: 'AA',
           abilityName: `Wit's End On-Hit`,
-          raw: p.baseDamage || 0,
+          raw: dmg,
           type: 'magic',
         });
         break;
-      case 'bork': {
+      }
+      case 'botrk': {
         const currentHP = attacker._targetCurrentHP || attacker._targetMaxHP || 2000;
         results.push({
           abilityKey: 'AA',
           abilityName: 'BotRK On-Hit',
-          raw: currentHP * (p.currentHPRatio || 0),
+          raw: currentHP * (p.currentHpRatioMelee || 0.09),
           type: 'physical',
         });
         break;
@@ -44,29 +49,16 @@ function computeAADamage(attacker, items) {
   return results;
 }
 
-// Compute spellblade proc (Sheen/Lich Bane/Trinity)
+// Compute spellblade proc (Sheen/Lich Bane/Trinity/Essence Reaver)
 function computeSpellbladeDamage(attacker, items) {
   let best = null;
   for (const item of items || []) {
     const p = item?._overrides?.passive;
-    if (!p) continue;
-    let raw = 0;
-    let type = 'physical';
-    switch (p.type) {
-      case 'sheen':
-        raw = (attacker.baseAD || attacker.attackdamage) * (p.baseADRatio || 1);
-        break;
-      case 'trinity':
-        raw = (attacker.baseAD || attacker.attackdamage) * (p.baseADRatio || 2);
-        break;
-      case 'lichBane':
-        raw = (attacker.baseAD || attacker.attackdamage) * (p.baseADRatio || 0.75)
-            + (attacker.ap || 0) * (p.apRatio || 0.5);
-        type = 'magic';
-        break;
-      default:
-        continue;
-    }
+    if (!p || p.type !== 'spellblade') continue;
+    const baseAD = attacker.baseAD || attacker.attackdamage;
+    let raw = baseAD * (p.baseAdRatio || p.baseADRatio || 1);
+    if (p.apRatio) raw += (attacker.ap || 0) * p.apRatio;
+    const type = p.damageType || 'physical';
     if (!best || raw > best.raw) best = { raw, type, name: item.name };
   }
   return best;

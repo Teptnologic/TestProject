@@ -72,8 +72,8 @@ export function totalStats(champStats, level, items) {
     if (ov) {
       lethality += ov.lethality || 0;
       flatMagicPen += ov.flatMagicPen || 0;
-      magicPenPct += ov.magicPenPct || 0;
-      armorPenPct += ov.armorPenPct || 0;
+      magicPenPct += ov.pctMagicPen || ov.magicPenPct || 0;
+      armorPenPct += ov.pctArmorPen || ov.armorPenPct || 0;
       abilityHaste += ov.abilityHaste || 0;
       if (ov.passive?.type === 'rabadons') hasRabadons = true;
     }
