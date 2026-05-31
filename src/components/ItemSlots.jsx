@@ -31,7 +31,13 @@ export default function ItemSlots({ build, setBuild }) {
   const [openSlot, setOpenSlot] = useState(null);
   const [query, setQuery] = useState('');
 
-  const slots = build.items;
+  // build.items may be resolved objects (from fullBuild) or raw IDs.
+  // We need the raw IDs for lookups, so extract them.
+  const slots = build.items.map((item) => {
+    if (!item) return null;
+    if (typeof item === 'number') return item;
+    return item.id;
+  });
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
