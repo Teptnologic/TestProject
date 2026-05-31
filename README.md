@@ -1,16 +1,30 @@
-# React + Vite
+# LoL Damage Calculator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite app for calculating League of Legends champion damage across combos, items, and levels.
 
-Currently, two official plugins are available:
+## Data
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Champion/item data is pulled from Riot's Data Dragon and Community Dragon at build time.
 
-## React Compiler
+```bash
+# Fetch latest patch data for all champions (~5 min, ~50 MB output)
+npm run fetch-data
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# Fetch just a few champions (useful for testing)
+node scripts/fetch-data.js --sample=Lux,Aatrox,Ahri
+```
 
-## Expanding the ESLint configuration
+Output lands in `src/data/generated/`:
+- `meta.json` — patch version + fetch timestamp
+- `champions.json` — list of all champs with base stats
+- `champion-details.json` — per-champ spell tooltips + raw bin data
+- `items.json` — purchasable Summoner's Rift items
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+A weekly GitHub Action (`.github/workflows/refresh-data.yml`) opens a PR with refreshed data every Wednesday.
+
+## Dev
+
+```bash
+npm install
+npm run dev
+```

@@ -62,12 +62,69 @@ async function fetchChampionDetail(version, championId) {
   };
 }
 
-async function fetchCDragonChampion(key) {
+// Spell-related fields to extract from bin.json entries
+const SPELL_FIELDS = new Set([
+  'mDataValues',
+  'mSpellCalculations',
+  'mCoefficient',
+  'mEffectAmount',
+  'mCastTime',
+  'mCastFrame',
+  'mChannelDuration',
+  'mCooldownTime',
+  'mManaCost',
+  'mCastRange',
+  'mCastRangeDisplayOverride',
+  'mMissileSpeed',
+  'mSpellTags',
+  'mScriptName',
+  'mSpellName',
+  'mClientData',
+]);
+
+function looksLikeBotVariant(key) {
+  return /(?:Bot|Tutorial|URF|Sandbox|TFT|Arena|Cherry|Strawberry|Practice)/i.test(key);
+}
+
+function extractSpellData(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  if (Array.isArray(obj)) {
+    const mapped = obj.map(extractSpellData).filter((v) => v !== null && v !== undefined);
+    return mapped.length ? mapped : null;
+  }
+  const out = {};
+  let kept = false;
+  for (const [k, v] of Object.entries(obj)) {
+    if (SPELL_FIELDS.has(k)) {
+      out[k] = v;
+      kept = true;
+    } else if (k === 'mSpell' && typeof v === 'object') {
+      const inner = extractSpellData(v);
+      if (inner) {
+        out.mSpell = inner;
+        kept = true;
+      }
+    } else if (typeof v === 'object' && v !== null) {
+      const inner = extractSpellData(v);
+      if (inner && Object.keys(inner).length) {
+        out[k] = inner;
+        kept = true;
+      }
+    }
+  }
+  return kept ? out : null;
+}
+
+async function fetchCDragonChampion(key, championId) {
+  const lc = championId.toLowerCase();
+  const result = { spells: [] };
+
+  // Lightweight metadata endpoint
   try {
     const data = await fetchJSON(
       `${CDRAGON}/plugins/rcp-be-lol-game-data/global/default/v1/champions/${key}.json`
     );
-    const spells = (data.spells || []).map((s) => ({
+    result.spells = (data.spells || []).map((s) => ({
       id: s.spellKey,
       name: s.name,
       cooldownCoefficients: s.cooldownCoefficients,
@@ -77,11 +134,49 @@ async function fetchCDragonChampion(key) {
       coefficients: s.coefficients,
       effectAmounts: s.effectAmounts,
     }));
-    return { spells };
   } catch (err) {
-    console.warn(`  cdragon failed for key=${key}: ${err.message}`);
-    return null;
+    console.warn(`\n  cdragon meta failed for ${championId}: ${err.message}`);
   }
+
+  // Rich game data: pull from bin.json, then aggressively filter
+  try {
+    const bin = await fetchJSON(`${CDRAGON}/game/data/characters/${lc}/${lc}.bin.json`);
+    const spellEntries = {};
+    for (const [k, v] of Object.entries(bin)) {
+      if (looksLikeBotVariant(k)) continue;
+      // Champion record (base stats) — keep selected fields
+      if (k.includes('CharacterRecords/Root')) {
+        spellEntries[k] = pickCharacterStats(v);
+        continue;
+      }
+      const extracted = extractSpellData(v);
+      if (extracted) spellEntries[k] = extracted;
+    }
+    result.bin = spellEntries;
+  } catch (err) {
+    console.warn(`\n  cdragon bin failed for ${championId}: ${err.message}`);
+  }
+
+  return result;
+}
+
+function pickCharacterStats(v) {
+  if (!v || typeof v !== 'object') return null;
+  const wanted = [
+    'baseHP', 'hpPerLevel', 'baseMP', 'mpPerLevel',
+    'baseDamage', 'damagePerLevel',
+    'baseArmor', 'armorPerLevel',
+    'baseSpellBlock', 'spellBlockPerLevel',
+    'baseStaticHPRegen', 'hpRegenPerLevel',
+    'baseStaticMPRegen', 'mpRegenPerLevel',
+    'attackSpeed', 'attackSpeedRatio', 'attackSpeedPerLevel',
+    'attackRange', 'critDamageMultiplier',
+    'baseMoveSpeed', 'baseStaticHPRegen',
+    'spellNames', 'extraSpells',
+  ];
+  const out = {};
+  for (const w of wanted) if (w in v) out[w] = v[w];
+  return out;
 }
 
 async function fetchItems(version) {
@@ -102,22 +197,30 @@ async function fetchItems(version) {
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
+  // CLI flags: --sample=Lux,Aatrox  (only fetch listed champs, useful for testing)
+  const sampleArg = process.argv.find((a) => a.startsWith('--sample='));
+  const sampleSet = sampleArg ? new Set(sampleArg.slice('--sample='.length).split(',')) : null;
+
   console.log('Fetching version...');
   const version = await getLatestVersion();
   console.log(`  version: ${version}`);
 
   console.log('Fetching champion list...');
-  const champions = await fetchChampionList(version);
+  let champions = await fetchChampionList(version);
   console.log(`  ${champions.length} champions`);
+  if (sampleSet) {
+    champions = champions.filter((c) => sampleSet.has(c.id));
+    console.log(`  sampled down to ${champions.length}`);
+  }
 
-  console.log('Fetching champion details (this takes ~30s)...');
+  console.log('Fetching champion details (this takes a few minutes)...');
   const details = {};
   for (let i = 0; i < champions.length; i++) {
     const c = champions[i];
     process.stdout.write(`\r  [${i + 1}/${champions.length}] ${c.id}            `);
     const [dd, cd] = await Promise.all([
       fetchChampionDetail(version, c.id).catch(() => null),
-      fetchCDragonChampion(c.key).catch(() => null),
+      fetchCDragonChampion(c.key, c.id).catch(() => null),
     ]);
     details[c.id] = { ddragon: dd, cdragon: cd };
   }
