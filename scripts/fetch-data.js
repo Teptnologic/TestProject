@@ -102,6 +102,15 @@ function looksLikeSpellEntry(key) {
   return key.startsWith('Characters/') && /\/Spells\//.test(key);
 }
 
+function looksLikePassiveOrBuff(key, val) {
+  if (!key.startsWith('Characters/')) return false;
+  if (/\/Spells\//.test(key)) return false; // already handled
+  if (!val || typeof val !== 'object') return false;
+  // Capture entries with mSpell containing DataValues or mSpellCalculations
+  const spell = val.mSpell || val;
+  return spell.DataValues || spell.mDataValues || spell.mSpellCalculations;
+}
+
 async function fetchCDragonChampion(key, championId) {
   const lc = championId.toLowerCase();
   const result = { spells: [] };
@@ -138,11 +147,26 @@ async function fetchCDragonChampion(key, championId) {
         continue;
       }
 
-      // Spell entries: keep entire mSpell payload (with noise stripped)
-      if (looksLikeSpellEntry(k) && v && typeof v === 'object') {
+      // Capture any character entry with calculation/data content:
+      // spell entries, passive/buff scripts, hash-keyed entries, etc.
+      if (!k.startsWith(`Characters/`) || !v || typeof v !== 'object') continue;
+
+      const hasSpell = !!v.mSpell;
+      const hasDataTop = v.DataValues || v.mDataValues || v.mSpellCalculations;
+      const hasDataInSpell = v.mSpell?.DataValues || v.mSpell?.mDataValues || v.mSpell?.mSpellCalculations;
+
+      if (hasSpell || hasDataTop || looksLikeSpellEntry(k)) {
         const out = { mScriptName: v.mScriptName };
-        if (v.mSpell) out.mSpell = stripNoise(v.mSpell);
-        // Some champs put data at top level instead of under mSpell
+        if (v.mSpell) {
+          out.mSpell = stripNoise(v.mSpell);
+        } else if (hasDataTop) {
+          const synthetic = {};
+          if (v.DataValues) synthetic.DataValues = v.DataValues;
+          if (v.mDataValues) synthetic.DataValues = v.mDataValues;
+          if (v.mSpellCalculations) synthetic.mSpellCalculations = v.mSpellCalculations;
+          if (Object.keys(synthetic).length) out.mSpell = synthetic;
+        }
+        // Top-level fields that may not be under mSpell
         for (const field of [
           'mDataValues',
           'mSpellCalculations',

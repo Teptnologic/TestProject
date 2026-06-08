@@ -112,7 +112,20 @@ function normalizeChampion(meta) {
   const abilities = [];
 
   // Passive — always include from DDragon; optionally enrich with bin data
-  const passiveEntry = Object.entries(bin).find(([k, v]) => /Passive/i.test(k) && v?.mSpell?.DataValues);
+  // Look for explicit "Passive" path, or hash-keyed entries with mSpell that
+  // aren't referenced by spellNames (Q/W/E/R)
+  const spellScriptNames = new Set(spellPaths.map((p) => p.split('/').pop()));
+  let passiveEntry = Object.entries(bin).find(([k, v]) => /Passive/i.test(k) && v?.mSpell?.DataValues);
+  if (!passiveEntry) {
+    passiveEntry = Object.entries(bin).find(([k, v]) => {
+      if (k.includes('CharacterRecords')) return false;
+      if (k.includes('BasicAttack') || k.includes('CritAttack')) return false;
+      if (!v?.mSpell?.DataValues) return false;
+      // Not one of the Q/W/E/R spells
+      const scriptName = v.mScriptName || k.split('/').pop();
+      return !spellScriptNames.has(scriptName) && !spellPaths.some((p) => k.includes(p));
+    });
+  }
   if (passiveEntry) {
     abilities.push({
       ...normalizeSpell(passiveEntry[1], null, 'P'),
