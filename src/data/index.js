@@ -115,7 +115,9 @@ function normalizeChampion(meta) {
   // Look for explicit "Passive" path, or hash-keyed entries with mSpell that
   // aren't referenced by spellNames (Q/W/E/R)
   const spellScriptNames = new Set(spellPaths.map((p) => p.split('/').pop()));
-  let passiveEntry = Object.entries(bin).find(([k, v]) => /Passive/i.test(k) && v?.mSpell?.DataValues);
+  let passiveEntry = Object.entries(bin).find(([k, v]) =>
+    (/Passive/i.test(k) || /Passive/i.test(v?.mScriptName || '')) && v?.mSpell?.DataValues
+  );
   if (!passiveEntry) {
     passiveEntry = Object.entries(bin).find(([k, v]) => {
       if (k.includes('CharacterRecords')) return false;
