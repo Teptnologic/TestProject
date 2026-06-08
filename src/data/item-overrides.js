@@ -136,6 +136,16 @@ export const ITEM_OVERRIDES = {
       critThreshold: 0.40, // requires >= 40% crit chance
     },
   },
+  2510: { // Dusk and Dawn
+    abilityHaste: 20,
+    passive: {
+      type: 'spellblade',
+      subtype: 'duskAndDawn',
+      baseAdRatio: 0.75,
+      apRatio: 0.45,
+      damageType: 'magic',
+    },
+  },
   3100: { // Lich Bane
     abilityHaste: 10,
     passive: {
