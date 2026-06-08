@@ -6,6 +6,9 @@ import champions from './generated/champions.json';
 import details from './generated/champion-details.json';
 import items from './generated/items.json';
 
+const itemBinModules = import.meta.glob('./generated/item-bin.json', { eager: true });
+const itemBinData = Object.values(itemBinModules)[0]?.default || null;
+
 const ABILITY_KEYS = ['P', 'Q', 'W', 'E', 'R'];
 
 function normalizeDataValues(rawDV) {
@@ -158,10 +161,98 @@ export function getChampion(id) {
   return championIndex[id];
 }
 
-export const itemList = items;
+// Stat enum from bin.json (mStat field in calculation parts)
+const STAT_ENUM = {
+  0: 'AP',
+  1: 'Armor',
+  2: 'AD',
+  3: 'AS',
+  4: 'AS_Pct',
+  11: 'HP',
+  14: 'AP',
+  15: 'MR',
+  28: 'BonusAD',
+  29: 'BonusHP',
+  36: 'MaxHP',
+};
+
+// StatFormula: 0=Total, 1=Base, 2=Bonus
+const STAT_FORMULA = { 0: '', 1: 'Base', 2: 'Bonus' };
+
+function resolveStatName(mStat, mStatFormula) {
+  const base = STAT_ENUM[mStat] || 'AP';
+  if (mStatFormula === 1 && base === 'AD') return 'BaseAD';
+  if (mStatFormula === 2 && base === 'AD') return 'BonusAD';
+  if (mStatFormula === 2 && base === 'HP') return 'BonusHP';
+  return base;
+}
+
+function normalizeItemCalculations(rawCalc) {
+  if (!rawCalc || typeof rawCalc !== 'object') return {};
+  const out = {};
+  for (const [name, calc] of Object.entries(rawCalc)) {
+    if (!calc) continue;
+    if (calc.__type === 'GameCalculationModified') {
+      out[name] = {
+        modified: calc.mModifiedGameCalculation,
+        multiplier: calc.mMultiplier,
+        parts: [],
+      };
+      if (calc.mMultiplier) {
+        out[name].multiplierParts = [normalizeItemFormulaPart(calc.mMultiplier)].filter(Boolean);
+      }
+      continue;
+    }
+    if (!Array.isArray(calc.mFormulaParts)) continue;
+    out[name] = {
+      parts: calc.mFormulaParts.map(normalizeItemFormulaPart).filter(Boolean),
+    };
+  }
+  return out;
+}
+
+function normalizeItemFormulaPart(p) {
+  if (!p || !p.__type) return null;
+  switch (p.__type) {
+    case 'NamedDataValueCalculationPart':
+      return { kind: 'dataValue', name: p.mDataValue };
+    case 'StatByNamedDataValueCalculationPart':
+      return { kind: 'statByDataValue', name: p.mDataValue, stat: resolveStatName(p.mStat, p.mStatFormula) };
+    case 'StatByCoefficientCalculationPart':
+      return { kind: 'statByCoefficient', coefficient: p.mCoefficient, stat: resolveStatName(p.mStat, p.mStatFormula) };
+    case 'ByCharLevelBreakpointsCalculationPart':
+      return { kind: 'byCharLevelBreakpoints', baseValue: p.mLevel1Value, breakpoints: p.mBreakpoints };
+    case 'ByCharLevelInterpolationCalculationPart':
+      return { kind: 'byCharLevelInterp', start: p.mStartValue, end: p.mEndValue };
+    case 'NumberCalculationPart':
+      return { kind: 'number', value: p.mNumber };
+    default:
+      return null;
+  }
+}
+
+function normalizeItemBin(binEntry) {
+  if (!binEntry) return null;
+  const result = {};
+  if (binEntry.dataValues) result.dataValues = binEntry.dataValues;
+  if (binEntry.calculations) result.calculations = normalizeItemCalculations(binEntry.calculations);
+  if (binEntry.directStats) result.directStats = binEntry.directStats;
+  if (binEntry.effectAmount) result.effectAmount = binEntry.effectAmount;
+  return Object.keys(result).length ? result : null;
+}
+
+// Build enriched item index with bin data
+const itemIndex = {};
+for (const item of items) {
+  const binEntry = itemBinData?.[String(item.id)];
+  const bin = normalizeItemBin(binEntry);
+  itemIndex[item.id] = bin ? { ...item, bin } : item;
+}
+
+export const itemList = Object.values(itemIndex);
 
 export function getItem(id) {
-  return items.find((i) => i.id === id);
+  return itemIndex[id] || null;
 }
 
 // Convenience: filter items to common damage-relevant ones

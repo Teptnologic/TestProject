@@ -209,31 +209,49 @@ async function fetchItemBinData(itemIds) {
 
     for (const [key, val] of Object.entries(bin)) {
       if (!val || typeof val !== 'object') continue;
+      if (val.__type !== 'ItemData') continue;
 
-      // Items may be keyed by hash or by paths like "Items/<id>" / "Items/Item<id>"
-      // Also check for mItemId field inside the value
+      // Resolve item ID from path or from itemID field
       let itemId = null;
       const pathMatch = key.match(/Items\/(?:Item)?(\d+)/i);
       if (pathMatch) {
         itemId = pathMatch[1];
       } else if (val.itemID !== undefined) {
         itemId = String(val.itemID);
-      } else if (val.mItemId !== undefined) {
-        itemId = String(val.mItemId);
+      }
+      if (!itemId || !idSet.has(itemId)) continue;
+
+      const entry = {};
+
+      // mDataValues: array of {mName, mValue} → flat lookup
+      if (val.mDataValues) {
+        entry.dataValues = {};
+        for (const dv of val.mDataValues) {
+          if (dv.mName) entry.dataValues[dv.mName] = dv.mValue ?? 0;
+        }
       }
 
-      // Also capture entries that reference item spells/passives by checking
-      // for mSpellCalculations or mDataValues at any level
-      const hasCalcData = val.mSpellCalculations || val.mDataValues ||
-        val.mSpell?.mSpellCalculations || val.mSpell?.mDataValues ||
-        val.DataValues || val.Spell?.mSpellCalculations;
-
-      if (itemId && idSet.has(itemId)) {
-        itemBin[itemId] = stripNoise(val);
-      } else if (hasCalcData) {
-        // Store by original key for items we can't ID yet — we'll inspect later
-        itemBin[`_unkeyed:${key}`] = stripNoise(val);
+      // mItemCalculations: formula trees (same structure as champion mSpellCalculations)
+      if (val.mItemCalculations) {
+        entry.calculations = val.mItemCalculations;
       }
+
+      // mEffectAmount: positional effect values
+      if (val.mEffectAmount) {
+        entry.effectAmount = val.mEffectAmount;
+      }
+
+      // Direct stat fields not in Data Dragon
+      const directStats = {};
+      if (val.mAbilityHasteMod) directStats.abilityHaste = val.mAbilityHasteMod;
+      if (val.mFlatMagicPenetrationMod) directStats.flatMagicPen = val.mFlatMagicPenetrationMod;
+      if (val.mPercentMagicPenetrationMod) directStats.pctMagicPen = val.mPercentMagicPenetrationMod;
+      if (val.mFlatArmorPenetrationMod) directStats.lethality = val.mFlatArmorPenetrationMod;
+      if (val.mPercentArmorPenetrationMod) directStats.pctArmorPen = val.mPercentArmorPenetrationMod;
+      if (val.mPercentBonusArmorPenetrationMod) directStats.pctBonusArmorPen = val.mPercentBonusArmorPenetrationMod;
+      if (Object.keys(directStats).length) entry.directStats = directStats;
+
+      if (Object.keys(entry).length) itemBin[itemId] = entry;
     }
 
     console.log(`  Found ${Object.keys(itemBin).length} item bin entries`);

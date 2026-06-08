@@ -67,14 +67,25 @@ export function totalStats(champStats, level, items) {
         else bonus[mapped] = (bonus[mapped] || 0) + val;
       }
     }
-    // Manual overrides for pen, haste, passives
+    // Bin data: direct stats from CDragon (preferred, auto-updated)
+    const ds = item.bin?.directStats;
+    if (ds) {
+      lethality += ds.lethality || 0;
+      flatMagicPen += ds.flatMagicPen || 0;
+      magicPenPct += ds.pctMagicPen || 0;
+      armorPenPct += ds.pctArmorPen || ds.pctBonusArmorPen || 0;
+      abilityHaste += ds.abilityHaste || 0;
+    }
+    // Fallback: manual overrides for pen, haste, passives
     const ov = item._overrides;
     if (ov) {
-      lethality += ov.lethality || 0;
-      flatMagicPen += ov.flatMagicPen || 0;
-      magicPenPct += ov.pctMagicPen || ov.magicPenPct || 0;
-      armorPenPct += ov.pctArmorPen || ov.armorPenPct || 0;
-      abilityHaste += ov.abilityHaste || 0;
+      if (!ds) {
+        lethality += ov.lethality || 0;
+        flatMagicPen += ov.flatMagicPen || 0;
+        magicPenPct += ov.pctMagicPen || ov.magicPenPct || 0;
+        armorPenPct += ov.pctArmorPen || ov.armorPenPct || 0;
+        abilityHaste += ov.abilityHaste || 0;
+      }
       if (ov.passive?.type === 'rabadons') hasRabadons = true;
     }
   }

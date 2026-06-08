@@ -64,10 +64,94 @@ function computeSpellbladeDamage(attacker, items) {
   return best;
 }
 
+// Evaluate an item calculation using bin data (same as champion evaluateCalc but
+// item dataValues are single numbers, not per-rank arrays)
+function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
+  let total = 0;
+  for (const part of calc.parts || []) {
+    switch (part.kind) {
+      case 'dataValue':
+        total += dataValues?.[part.name] ?? 0;
+        break;
+      case 'statByDataValue': {
+        const ratio = dataValues?.[part.name] ?? 0;
+        total += statValue(attacker, part.stat) * ratio;
+        break;
+      }
+      case 'statByCoefficient':
+        total += statValue(attacker, part.stat) * (part.coefficient || 0);
+        break;
+      case 'byCharLevelBreakpoints': {
+        let val = part.baseValue || 0;
+        if (part.breakpoints) {
+          for (const bp of part.breakpoints) {
+            if (charLevel >= (bp.mLevel || 1)) {
+              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || 0;
+              val += perLevel * (charLevel - (bp.mLevel || 1));
+            }
+          }
+        }
+        total += val;
+        break;
+      }
+      case 'byCharLevelInterp': {
+        const t = Math.max(0, Math.min(1, (charLevel - 1) / 17));
+        total += (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
+        break;
+      }
+      case 'number':
+        total += part.value || 0;
+        break;
+    }
+  }
+  return total;
+}
+
+// Pick the best damage calculation from item bin data
+function pickItemDamageCalc(calculations) {
+  if (!calculations) return null;
+  const preferred = ['Damage', 'TotalDamage', 'DamageAmount', 'TotalDamageAmount',
+    'PassiveDamage', 'BurnDamage', 'ProcDamage'];
+  for (const name of preferred) {
+    if (calculations[name]?.parts?.length) return { name, calc: calculations[name] };
+  }
+  for (const [name, calc] of Object.entries(calculations)) {
+    if (/damage/i.test(name) && calc.parts?.length) return { name, calc };
+  }
+  return null;
+}
+
 // Compute item proc damage that triggers on ability hits (Luden's, Stormsurge, etc.)
 function computeItemProcs(attacker, items, target, abilityKey) {
   const results = [];
   for (const item of items || []) {
+    // Try bin-based calculation first
+    const bin = item?.bin;
+    if (bin?.calculations) {
+      const found = pickItemDamageCalc(bin.calculations);
+      if (found) {
+        let raw = evaluateItemCalc(found.calc, bin.dataValues, attacker, attacker.level || 1);
+
+        // Handle GameCalculationModified (multiplier reference)
+        if (found.calc.modified && bin.calculations[found.calc.modified]) {
+          // This calc IS a modified version — shouldn't happen since we pick Damage first
+        }
+        // Check if there's a TotalDamage that multiplies this calc
+        for (const [name, calc] of Object.entries(bin.calculations)) {
+          if (calc.modified === found.name && calc.multiplierParts?.length) {
+            const mult = evaluateItemCalc({ parts: calc.multiplierParts }, bin.dataValues, attacker, attacker.level || 1);
+            if (mult > 0) raw *= mult;
+          }
+        }
+
+        if (raw > 0) {
+          results.push({ abilityKey, abilityName: `${item.name}`, raw, type: 'magic' });
+        }
+        continue;
+      }
+    }
+
+    // Fallback to hardcoded overrides
     const p = item?._overrides?.passive;
     if (!p) continue;
     switch (p.type) {
