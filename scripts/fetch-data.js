@@ -147,15 +147,18 @@ async function fetchCDragonChampion(key, championId) {
         continue;
       }
 
-      // Capture any character entry with calculation/data content:
+      // Capture any entry with calculation/data content:
       // spell entries, passive/buff scripts, hash-keyed entries, etc.
-      if (!k.startsWith(`Characters/`) || !v || typeof v !== 'object') continue;
+      if (!v || typeof v !== 'object') continue;
 
       const hasSpell = !!v.mSpell;
       const hasDataTop = v.DataValues || v.mDataValues || v.mSpellCalculations;
       const hasDataInSpell = v.mSpell?.DataValues || v.mSpell?.mDataValues || v.mSpell?.mSpellCalculations;
+      const isCharEntry = k.startsWith('Characters/');
 
-      if (hasSpell || hasDataTop || looksLikeSpellEntry(k)) {
+      // Include: any Characters/ entry with mSpell or data, plus hash-keyed
+      // entries that have mSpell with DataValues/calculations
+      if ((isCharEntry && (hasSpell || hasDataTop)) || hasDataInSpell || looksLikeSpellEntry(k)) {
         const out = { mScriptName: v.mScriptName };
         if (v.mSpell) {
           out.mSpell = stripNoise(v.mSpell);
@@ -181,6 +184,11 @@ async function fetchCDragonChampion(key, championId) {
         }
         spellEntries[k] = out;
       }
+    }
+    const hasPassive = Object.keys(spellEntries).some((k) => /passive/i.test(k));
+    const hashKeys = Object.keys(spellEntries).filter((k) => !k.startsWith('Characters/'));
+    if (hashKeys.length || !hasPassive) {
+      process.stdout.write(` [${Object.keys(spellEntries).length} entries${hashKeys.length ? `, ${hashKeys.length} hash` : ''}${!hasPassive ? ', no passive path' : ''}]`);
     }
     result.bin = spellEntries;
   } catch (err) {
