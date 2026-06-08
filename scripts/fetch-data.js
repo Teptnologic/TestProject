@@ -200,6 +200,50 @@ async function fetchItems(version) {
     }));
 }
 
+async function fetchItemBinData(itemIds) {
+  console.log('Fetching item bin data from CDragon...');
+  try {
+    const bin = await fetchJSON(`${CDRAGON}/game/items.cdtb.bin.json`);
+    const itemBin = {};
+    const idSet = new Set(itemIds.map(String));
+
+    for (const [key, val] of Object.entries(bin)) {
+      if (!val || typeof val !== 'object') continue;
+
+      // Items may be keyed by hash or by paths like "Items/<id>" / "Items/Item<id>"
+      // Also check for mItemId field inside the value
+      let itemId = null;
+      const pathMatch = key.match(/Items\/(?:Item)?(\d+)/i);
+      if (pathMatch) {
+        itemId = pathMatch[1];
+      } else if (val.itemID !== undefined) {
+        itemId = String(val.itemID);
+      } else if (val.mItemId !== undefined) {
+        itemId = String(val.mItemId);
+      }
+
+      // Also capture entries that reference item spells/passives by checking
+      // for mSpellCalculations or mDataValues at any level
+      const hasCalcData = val.mSpellCalculations || val.mDataValues ||
+        val.mSpell?.mSpellCalculations || val.mSpell?.mDataValues ||
+        val.DataValues || val.Spell?.mSpellCalculations;
+
+      if (itemId && idSet.has(itemId)) {
+        itemBin[itemId] = stripNoise(val);
+      } else if (hasCalcData) {
+        // Store by original key for items we can't ID yet — we'll inspect later
+        itemBin[`_unkeyed:${key}`] = stripNoise(val);
+      }
+    }
+
+    console.log(`  Found ${Object.keys(itemBin).length} item bin entries`);
+    return itemBin;
+  } catch (err) {
+    console.warn(`  Item bin fetch failed: ${err.message}`);
+    return null;
+  }
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
@@ -236,12 +280,19 @@ async function main() {
   const items = await fetchItems(version);
   console.log(`  ${items.length} items`);
 
+  const itemIds = items.map((i) => i.id);
+  const itemBin = await fetchItemBinData(itemIds);
+
   const meta = { version, fetchedAt: new Date().toISOString() };
 
   await writeFile(join(OUT_DIR, 'meta.json'), JSON.stringify(meta, null, 2));
   await writeFile(join(OUT_DIR, 'champions.json'), JSON.stringify(champions, null, 2));
   await writeFile(join(OUT_DIR, 'champion-details.json'), JSON.stringify(details));
   await writeFile(join(OUT_DIR, 'items.json'), JSON.stringify(items, null, 2));
+  if (itemBin) {
+    await writeFile(join(OUT_DIR, 'item-bin.json'), JSON.stringify(itemBin, null, 2));
+    console.log('  Item bin data written to item-bin.json');
+  }
 
   console.log(`\nDone. Data written to ${OUT_DIR}`);
 }
