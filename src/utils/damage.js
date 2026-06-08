@@ -49,10 +49,23 @@ function computeAADamage(attacker, items) {
   return results;
 }
 
-// Compute spellblade proc (Sheen/Lich Bane/Trinity/Essence Reaver)
+// Compute spellblade proc (Sheen/Lich Bane/Trinity/Essence Reaver/Dusk and Dawn)
 function computeSpellbladeDamage(attacker, items) {
   let best = null;
   for (const item of items || []) {
+    // Try bin-based SpellbladeDamage calculation first
+    const bin = item?.bin;
+    if (bin?.calculations?.SpellbladeDamage) {
+      const raw = evaluateItemCalc(bin.calculations.SpellbladeDamage, bin.dataValues, attacker, attacker.level || 1);
+      // Detect damage type: items with AP scaling (Lich Bane, Dusk and Dawn) deal magic
+      const hasAPScaling = bin.calculations.SpellbladeDamage.parts?.some(
+        (p) => (p.kind === 'statByCoefficient' || p.kind === 'statByDataValue') && p.stat === 'AP'
+      );
+      const type = hasAPScaling ? 'magic' : 'physical';
+      if (raw > 0 && (!best || raw > best.raw)) best = { raw, type, name: item.name };
+      continue;
+    }
+    // Fallback to manual overrides
     const p = item?._overrides?.passive;
     if (!p || p.type !== 'spellblade') continue;
     const baseAD = attacker.baseAD || attacker.attackdamage;
@@ -110,79 +123,89 @@ function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
 // Pick the best damage calculation from item bin data
 function pickItemDamageCalc(calculations) {
   if (!calculations) return null;
-  const preferred = ['Damage', 'TotalDamage', 'DamageAmount', 'TotalDamageAmount',
-    'PassiveDamage', 'BurnDamage', 'ProcDamage'];
+  const preferred = [
+    'Damage', 'TotalDamage', 'SquallDamage', 'MeleeItemCalcValue',
+    'DamageAmount', 'TotalDamageAmount', 'PassiveDamage', 'ProcDamage',
+  ];
   for (const name of preferred) {
     if (calculations[name]?.parts?.length) return { name, calc: calculations[name] };
   }
   for (const [name, calc] of Object.entries(calculations)) {
-    if (/damage/i.test(name) && calc.parts?.length) return { name, calc };
+    if (/damage|burn/i.test(name) && calc.parts?.length && name !== 'SpellbladeDamage') {
+      return { name, calc };
+    }
   }
   return null;
 }
 
-// Compute item proc damage that triggers on ability hits (Luden's, Stormsurge, etc.)
+// Known item IDs for special handling
+const ITEM_IDS = {
+  LIANDRYS: 6653,
+  BLACKFIRE: 2503,
+  MALIGNANCE: 3118,
+};
+
+// Compute item proc damage that triggers on ability hits
 function computeItemProcs(attacker, items, target, abilityKey) {
   const results = [];
   for (const item of items || []) {
-    // Try bin-based calculation first
     const bin = item?.bin;
-    if (bin?.calculations) {
-      const found = pickItemDamageCalc(bin.calculations);
-      if (found) {
-        let raw = evaluateItemCalc(found.calc, bin.dataValues, attacker, attacker.level || 1);
+    if (!bin) continue;
+    const dv = bin.dataValues || {};
 
-        // Handle GameCalculationModified (multiplier reference)
-        if (found.calc.modified && bin.calculations[found.calc.modified]) {
-          // This calc IS a modified version — shouldn't happen since we pick Damage first
-        }
-        // Check if there's a TotalDamage that multiplies this calc
-        for (const [name, calc] of Object.entries(bin.calculations)) {
-          if (calc.modified === found.name && calc.multiplierParts?.length) {
-            const mult = evaluateItemCalc({ parts: calc.multiplierParts }, bin.dataValues, attacker, attacker.level || 1);
-            if (mult > 0) raw *= mult;
-          }
-        }
-
-        if (raw > 0) {
-          results.push({ abilityKey, abilityName: `${item.name}`, raw, type: 'magic' });
-        }
-        continue;
-      }
+    // Liandry's: % max HP burn, no formula calc — use dataValues directly
+    if (item.id === ITEM_IDS.LIANDRYS && dv.BurnPercentHealthDamage) {
+      const targetHP = target?.hp || 2000;
+      const raw = targetHP * dv.BurnPercentHealthDamage * (dv.BurnDuration || 3);
+      results.push({ abilityKey, abilityName: `Liandry's Burn`, raw, type: 'magic' });
+      continue;
     }
 
-    // Fallback to hardcoded overrides
-    const p = item?._overrides?.passive;
-    if (!p) continue;
-    switch (p.type) {
-      case 'ludens': {
-        const raw = (p.flatDamage || 0) + (p.apRatio || 0) * (attacker.ap || 0);
-        results.push({ abilityKey, abilityName: `Luden's Echo`, raw, type: 'magic' });
-        break;
-      }
-      case 'stormsurge': {
-        const lvl = attacker.level || 1;
-        const flat = (p.flatDamageMin || 100) + ((p.flatDamageMax || 200) - (p.flatDamageMin || 100)) * ((lvl - 1) / 17);
-        const raw = flat + (p.apRatio || 0) * (attacker.ap || 0);
-        results.push({ abilityKey, abilityName: 'Stormsurge', raw, type: 'magic' });
-        break;
-      }
-      case 'blackfireTorch': {
-        const raw = (p.flatDamageTotal || 0) + (p.apRatio || 0) * (attacker.ap || 0);
-        results.push({ abilityKey, abilityName: 'Blackfire Torch', raw, type: 'magic' });
-        break;
-      }
-      case 'liandrys': {
-        const targetHP = target?.hp || 2000;
-        const raw = targetHP * (p.maxHpPerSecond || 0.02) * (p.duration || 3);
-        results.push({ abilityKey, abilityName: `Liandry's Burn`, raw, type: 'magic' });
-        break;
-      }
-      case 'malignance': {
-        if (abilityKey !== 'R') break;
-        const raw = ((p.flatDamagePerSecond || 0) + (p.apRatioPerSecond || 0) * (attacker.ap || 0)) * (p.duration || 3);
+    // Malignance: ult-only ground burn
+    if (item.id === ITEM_IDS.MALIGNANCE) {
+      if (abilityKey !== 'R') continue;
+      const found = pickItemDamageCalc(bin.calculations);
+      if (found) {
+        const perTick = evaluateItemCalc(found.calc, dv, attacker, attacker.level || 1);
+        const raw = perTick * (dv.GroundDuration || 3);
         results.push({ abilityKey, abilityName: 'Malignance', raw, type: 'magic' });
-        break;
+      }
+      continue;
+    }
+
+    // Blackfire Torch: burn per second × duration
+    if (item.id === ITEM_IDS.BLACKFIRE && bin.calculations) {
+      const found = pickItemDamageCalc(bin.calculations);
+      if (found) {
+        const perSecond = evaluateItemCalc(found.calc, dv, attacker, attacker.level || 1);
+        const raw = perSecond * (dv.BurnDuration || 3);
+        results.push({ abilityKey, abilityName: 'Blackfire Torch', raw, type: 'magic' });
+      }
+      continue;
+    }
+
+    // General proc items (Luden's, Stormsurge, etc.)
+    if (bin.calculations) {
+      const found = pickItemDamageCalc(bin.calculations);
+      if (!found) continue;
+      // Skip items that only have SpellbladeDamage (handled in AA path)
+      if (!found) continue;
+
+      let raw = evaluateItemCalc(found.calc, dv, attacker, attacker.level || 1);
+
+      // Check for SingleTargetMax or similar modified calc that multiplies base
+      for (const [, calc] of Object.entries(bin.calculations)) {
+        if (calc.modified === found.name && calc.multiplierParts?.length) {
+          const mult = evaluateItemCalc({ parts: calc.multiplierParts }, dv, attacker, attacker.level || 1);
+          if (mult > 1) {
+            raw *= mult;
+            break;
+          }
+        }
+      }
+
+      if (raw > 0) {
+        results.push({ abilityKey, abilityName: item.name, raw, type: 'magic' });
       }
     }
   }
@@ -209,6 +232,7 @@ function statValue(attacker, statName) {
   switch (statName) {
     case 'AP': return attacker.ap || 0;
     case 'AD': return attacker.attackdamage || 0;
+    case 'BaseAD': return attacker.baseAD || attacker.attackdamage || 0;
     case 'BonusAD': return attacker.bonusAD || 0;
     case 'BonusHP': return attacker.bonusHP || 0;
     case 'MaxHP': return attacker.hp || 0;
