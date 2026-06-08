@@ -111,8 +111,8 @@ function normalizeChampion(meta) {
 
   const abilities = [];
 
-  // Passive
-  const passiveEntry = Object.entries(bin).find(([k]) => /Passive/.test(k) && bin[k]?.mSpell?.DataValues);
+  // Passive — always include from DDragon; optionally enrich with bin data
+  const passiveEntry = Object.entries(bin).find(([k, v]) => /Passive/i.test(k) && v?.mSpell?.DataValues);
   if (passiveEntry) {
     abilities.push({
       ...normalizeSpell(passiveEntry[1], null, 'P'),
@@ -120,6 +120,16 @@ function normalizeChampion(meta) {
       icon: detail.ddragon?.passive?.icon,
       description: detail.ddragon?.passive?.description,
       maxrank: 1,
+    });
+  } else if (detail.ddragon?.passive) {
+    abilities.push({
+      key: 'P',
+      name: detail.ddragon.passive.name,
+      icon: detail.ddragon.passive.icon,
+      description: detail.ddragon.passive.description,
+      maxrank: 1,
+      dataValues: {},
+      calculations: {},
     });
   }
 
