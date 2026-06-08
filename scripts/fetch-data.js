@@ -200,6 +200,19 @@ async function fetchItems(version) {
     }));
 }
 
+function matchBinIdToDDragon(binId, idSet) {
+  const s = String(binId);
+  if (idSet.has(s)) return s;
+  // Bin IDs may have a map prefix (e.g. 224646 → 4646 for Summoner's Rift)
+  if (s.length > 4) {
+    const stripped = s.slice(s.length - 4);
+    if (idSet.has(stripped)) return stripped;
+    const stripped5 = s.slice(s.length - 5);
+    if (idSet.has(stripped5)) return stripped5;
+  }
+  return null;
+}
+
 async function fetchItemBinData(itemIds) {
   console.log('Fetching item bin data from CDragon...');
   try {
@@ -207,23 +220,16 @@ async function fetchItemBinData(itemIds) {
     const itemBin = {};
     const idSet = new Set(itemIds.map(String));
 
-    for (const [key, val] of Object.entries(bin)) {
+    for (const [, val] of Object.entries(bin)) {
       if (!val || typeof val !== 'object') continue;
       if (val.__type !== 'ItemData') continue;
+      if (val.itemID === undefined) continue;
 
-      // Resolve item ID from path or from itemID field
-      let itemId = null;
-      const pathMatch = key.match(/Items\/(?:Item)?(\d+)/i);
-      if (pathMatch) {
-        itemId = pathMatch[1];
-      } else if (val.itemID !== undefined) {
-        itemId = String(val.itemID);
-      }
-      if (!itemId || !idSet.has(itemId)) continue;
+      const ddId = matchBinIdToDDragon(val.itemID, idSet);
+      if (!ddId) continue;
 
       const entry = {};
 
-      // mDataValues: array of {mName, mValue} → flat lookup
       if (val.mDataValues) {
         entry.dataValues = {};
         for (const dv of val.mDataValues) {
@@ -231,17 +237,22 @@ async function fetchItemBinData(itemIds) {
         }
       }
 
-      // mItemCalculations: formula trees (same structure as champion mSpellCalculations)
       if (val.mItemCalculations) {
-        entry.calculations = val.mItemCalculations;
+        entry.calculations = {};
+        for (const [name, calc] of Object.entries(val.mItemCalculations)) {
+          if (!calc) continue;
+          const clean = { __type: calc.__type };
+          if (calc.mFormulaParts) clean.mFormulaParts = calc.mFormulaParts;
+          if (calc.mModifiedGameCalculation) clean.mModifiedGameCalculation = calc.mModifiedGameCalculation;
+          if (calc.mMultiplier) clean.mMultiplier = calc.mMultiplier;
+          entry.calculations[name] = clean;
+        }
       }
 
-      // mEffectAmount: positional effect values
       if (val.mEffectAmount) {
         entry.effectAmount = val.mEffectAmount;
       }
 
-      // Direct stat fields not in Data Dragon
       const directStats = {};
       if (val.mAbilityHasteMod) directStats.abilityHaste = val.mAbilityHasteMod;
       if (val.mFlatMagicPenetrationMod) directStats.flatMagicPen = val.mFlatMagicPenetrationMod;
@@ -251,7 +262,13 @@ async function fetchItemBinData(itemIds) {
       if (val.mPercentBonusArmorPenetrationMod) directStats.pctBonusArmorPen = val.mPercentBonusArmorPenetrationMod;
       if (Object.keys(directStats).length) entry.directStats = directStats;
 
-      if (Object.keys(entry).length) itemBin[itemId] = entry;
+      if (Object.keys(entry).length) {
+        if (!itemBin[ddId]) {
+          itemBin[ddId] = entry;
+        } else if (entry.dataValues && !itemBin[ddId].dataValues) {
+          itemBin[ddId] = entry;
+        }
+      }
     }
 
     console.log(`  Found ${Object.keys(itemBin).length} item bin entries`);
