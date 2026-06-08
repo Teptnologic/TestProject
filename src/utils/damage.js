@@ -133,7 +133,7 @@ function statValue(attacker, statName) {
 }
 
 // Evaluate a single calculation at the given ability rank + attacker stats
-function evaluateCalc(calc, rank, attacker, charLevel) {
+export function evaluateCalc(calc, rank, attacker, charLevel) {
   let total = 0;
   for (const part of calc.parts) {
     switch (part.kind) {

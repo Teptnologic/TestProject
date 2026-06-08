@@ -76,7 +76,7 @@ export default function ChampionPanel({ build, setBuild, stats }) {
         {build.champion && (
           <>
             <div className="section-label">Abilities</div>
-            <AbilityRow build={build} setBuild={setBuild} />
+            <AbilityRow build={build} setBuild={setBuild} stats={stats} />
 
             <div className="section-label">Items</div>
             <ItemSlots build={build} setBuild={setBuild} />

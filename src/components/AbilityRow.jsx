@@ -1,8 +1,10 @@
 import meta from '../data/generated/meta.json';
+import GameTooltip from './GameTooltip';
+import { formatAbilityTooltip, lolHtmlToSafeHtml } from '../utils/tooltip';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
-export default function AbilityRow({ build, setBuild }) {
+export default function AbilityRow({ build, setBuild, stats }) {
   const champ = build.champion;
   if (!champ) return null;
 
@@ -24,14 +26,18 @@ export default function AbilityRow({ build, setBuild }) {
     <div className="ability-row">
       {/* Auto Attack button */}
       <div className="ability-box">
-        <div
-          className="ability-icon"
-          title="Auto Attack (click to add to combo)"
-          onClick={() => addToCombo('AA')}
-          style={{ borderColor: '#f39c12' }}
+        <GameTooltip
+          title="Auto Attack"
+          html="Basic attack dealing physical damage based on your Attack Damage. Click to add to combo."
         >
-          <span className="placeholder" style={{ color: '#f39c12', fontSize: '14px' }}>AA</span>
-        </div>
+          <div
+            className="ability-icon"
+            onClick={() => addToCombo('AA')}
+            style={{ borderColor: '#f39c12' }}
+          >
+            <span className="placeholder" style={{ color: '#f39c12', fontSize: '14px' }}>AA</span>
+          </div>
+        </GameTooltip>
         <div className="ability-rank"><span className="rank-value">—</span></div>
         <div className="ability-label">Auto Atk</div>
       </div>
@@ -43,16 +49,30 @@ export default function AbilityRow({ build, setBuild }) {
               : `${DDRAGON_IMG}/spell/${ability.icon}`)
           : null;
 
+        const rankForTooltip = ability.key === 'P' ? 1 : rank;
+        const tooltipHtml = lolHtmlToSafeHtml(
+          formatAbilityTooltip(ability, rankForTooltip, stats || {}, build.level),
+        );
+        const costLine =
+          ability.cost && rankForTooltip > 0
+            ? `Cost: ${ability.cost[rankForTooltip - 1] ?? ability.cost.at(-1)}`
+            : null;
+
         return (
           <div className="ability-box" key={ability.key}>
-            <div
-              className="ability-icon"
-              title={`${ability.key} - ${ability.name} (click to add to combo)`}
-              onClick={() => addToCombo(ability.key)}
+            <GameTooltip
+              title={ability.name}
+              subtitle={costLine ? `${ability.key} · ${costLine}` : ability.key}
+              html={tooltipHtml}
             >
-              {iconUrl ? <img src={iconUrl} alt={ability.name} /> : <span className="placeholder">{ability.key}</span>}
-              <span className="key-letter">{ability.key}</span>
-            </div>
+              <div
+                className="ability-icon"
+                onClick={() => addToCombo(ability.key)}
+              >
+                {iconUrl ? <img src={iconUrl} alt={ability.name} /> : <span className="placeholder">{ability.key}</span>}
+                <span className="key-letter">{ability.key}</span>
+              </div>
+            </GameTooltip>
             {ability.key !== 'P' ? (
               <div className="ability-rank">
                 <button className="rank-btn" onClick={() => adjustRank(ability.key, -1)} disabled={rank === 0}>-</button>

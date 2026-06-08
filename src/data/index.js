@@ -87,6 +87,7 @@ function normalizeSpell(rawEntry, ddragonSpell, abilityKey) {
     cooldown: ddragonSpell?.cooldown || mSpell.cooldownTime,
     cost: ddragonSpell?.cost,
     range: ddragonSpell?.range,
+    effect: ddragonSpell?.effect,
     dataValues: normalizeDataValues(mSpell.DataValues),
     calculations: normalizeCalculations(mSpell.mSpellCalculations),
     coefficient: mSpell.mCoefficient,

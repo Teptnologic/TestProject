@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { itemList, getItem } from '../data';
 import meta from '../data/generated/meta.json';
+import GameTooltip from './GameTooltip';
+import { formatItemTooltip } from '../utils/tooltip';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
@@ -70,25 +72,36 @@ export default function ItemSlots({ build, setBuild }) {
       <div className="items-grid">
         {slots.map((id, idx) => {
           const item = id ? getItem(id) : null;
+          const slotInner = item ? (
+            <>
+              <img
+                src={`${DDRAGON_IMG}/item/${item.id}.png`}
+                alt={item.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              <button className="remove" onClick={(e) => clearSlot(idx, e)}>×</button>
+            </>
+          ) : (
+            <span className="plus">+</span>
+          );
+
           return (
             <div
               key={idx}
               className={`item-slot ${item ? 'filled' : ''}`}
               onClick={() => setOpenSlot(idx)}
-              title={item?.name}
             >
               {item ? (
-                <>
-                  <img
-                    src={`${DDRAGON_IMG}/item/${item.id}.png`}
-                    alt={item.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                  <button className="remove" onClick={(e) => clearSlot(idx, e)}>×</button>
-                </>
+                <GameTooltip
+                  title={item.name}
+                  subtitle={item.gold ? `${item.gold} gold` : null}
+                  html={formatItemTooltip(item)}
+                >
+                  {slotInner}
+                </GameTooltip>
               ) : (
-                <span className="plus">+</span>
+                slotInner
               )}
             </div>
           );
