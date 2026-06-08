@@ -87,15 +87,35 @@ export const ITEM_OVERRIDES = {
   },
   4646: { // Stormsurge
     flatMagicPen: 10,
+    passive: {
+      type: 'stormsurge',
+      // Squall: 100-200 (scales with level) + 50% AP after dealing 25% max HP.
+      flatDamageMin: 100,
+      flatDamageMax: 200,
+      apRatio: 0.50,
+      damageType: 'magic',
+    },
   },
-  6655: { // Luden's Companion
-    abilityHaste: 20,
-    // Note: Luden's Companion no longer grants magic pen as of current patch.
-    // Fire passive (bolt damage) is proc-based and not modeled here.
+  6655: { // Luden's Echo
+    abilityHaste: 10,
+    passive: {
+      type: 'ludens',
+      // Echo: 6 bolts on first ability hit. Primary = 100 + 10% AP,
+      // remaining 5 at 20% each on single target. Total ≈ 200 + 20% AP.
+      flatDamage: 200,
+      apRatio: 0.20,
+      damageType: 'magic',
+    },
   },
   2503: { // Blackfire Torch
     abilityHaste: 20,
-    // Burn passive excluded per spec.
+    passive: {
+      type: 'blackfireTorch',
+      // Baleful Blaze: 30 + 4% AP per second for 3 seconds.
+      flatDamageTotal: 90,
+      apRatio: 0.12,
+      damageType: 'magic',
+    },
   },
 
   // ─────────────────────────────────────────────────────────
@@ -126,6 +146,27 @@ export const ITEM_OVERRIDES = {
   // Key passives for damage calculation
   // ─────────────────────────────────────────────────────────
 
+  6653: { // Liandry's Torment
+    passive: {
+      type: 'liandrys',
+      // Torment: 2% target max HP magic damage/s for 3s = 6% total.
+      maxHpPerSecond: 0.02,
+      duration: 3,
+      damageType: 'magic',
+    },
+  },
+  3118: { // Malignance
+    abilityHaste: 15,
+    passive: {
+      type: 'malignance',
+      // Hatefog: ult ground burn 60 + 12% AP/s for 3s. Only procs on R.
+      flatDamagePerSecond: 60,
+      apRatioPerSecond: 0.12,
+      duration: 3,
+      damageType: 'magic',
+      ultOnly: true,
+    },
+  },
   3089: { // Rabadon's Deathcap
     passive: { type: 'rabadons', apMultiplier: 0.35 },
   },

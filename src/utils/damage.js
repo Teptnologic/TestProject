@@ -64,6 +64,47 @@ function computeSpellbladeDamage(attacker, items) {
   return best;
 }
 
+// Compute item proc damage that triggers on ability hits (Luden's, Stormsurge, etc.)
+function computeItemProcs(attacker, items, target, abilityKey) {
+  const results = [];
+  for (const item of items || []) {
+    const p = item?._overrides?.passive;
+    if (!p) continue;
+    switch (p.type) {
+      case 'ludens': {
+        const raw = (p.flatDamage || 0) + (p.apRatio || 0) * (attacker.ap || 0);
+        results.push({ abilityKey, abilityName: `Luden's Echo`, raw, type: 'magic' });
+        break;
+      }
+      case 'stormsurge': {
+        const lvl = attacker.level || 1;
+        const flat = (p.flatDamageMin || 100) + ((p.flatDamageMax || 200) - (p.flatDamageMin || 100)) * ((lvl - 1) / 17);
+        const raw = flat + (p.apRatio || 0) * (attacker.ap || 0);
+        results.push({ abilityKey, abilityName: 'Stormsurge', raw, type: 'magic' });
+        break;
+      }
+      case 'blackfireTorch': {
+        const raw = (p.flatDamageTotal || 0) + (p.apRatio || 0) * (attacker.ap || 0);
+        results.push({ abilityKey, abilityName: 'Blackfire Torch', raw, type: 'magic' });
+        break;
+      }
+      case 'liandrys': {
+        const targetHP = target?.hp || 2000;
+        const raw = targetHP * (p.maxHpPerSecond || 0.02) * (p.duration || 3);
+        results.push({ abilityKey, abilityName: `Liandry's Burn`, raw, type: 'magic' });
+        break;
+      }
+      case 'malignance': {
+        if (abilityKey !== 'R') break;
+        const raw = ((p.flatDamagePerSecond || 0) + (p.apRatioPerSecond || 0) * (attacker.ap || 0)) * (p.duration || 3);
+        results.push({ abilityKey, abilityName: 'Malignance', raw, type: 'magic' });
+        break;
+      }
+    }
+  }
+  return results;
+}
+
 // Pick the most relevant "damage" calculation from a spell's calculations map.
 function pickDamageCalc(calculations) {
   if (!calculations) return null;
@@ -175,6 +216,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   const steps = [];
   let totalPhys = 0, totalMagic = 0, totalTrue = 0;
   let lastWasSpell = false;
+  let itemProcsUsed = false;
 
   function addDmg(result) {
     const post = applyResistance(result.raw, result.type, target, attackerStats);
@@ -188,7 +230,6 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     if (step === 'AA') {
       const aaResults = computeAADamage(attackerStats, items);
       for (const r of aaResults) addDmg(r);
-      // Spellblade procs on AA after a spell cast
       if (lastWasSpell) {
         const sb = computeSpellbladeDamage(attackerStats, items);
         if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
@@ -202,6 +243,17 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     const rank = step === 'P' ? 1 : (ranks[step] || 1);
     const result = computeAbilityDamage(ability, rank, attackerStats, charLevel);
     if (result && result.raw) addDmg(result);
+
+    if (!itemProcsUsed) {
+      const procs = computeItemProcs(attackerStats, items, target, step);
+      for (const r of procs) addDmg(r);
+      if (procs.length > 0) itemProcsUsed = true;
+    } else if (step === 'R') {
+      const procs = computeItemProcs(attackerStats, items, target, 'R');
+      const ultOnly = procs.filter((r) => r.abilityName === 'Malignance');
+      for (const r of ultOnly) addDmg(r);
+    }
+
     lastWasSpell = true;
   }
 
