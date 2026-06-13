@@ -11,6 +11,30 @@ const itemBinData = Object.values(itemBinModules)[0]?.default || null;
 
 const ABILITY_KEYS = ['P', 'Q', 'W', 'E', 'R'];
 
+const STAT_ENUM = {
+  0: 'AP',
+  1: 'Armor',
+  2: 'AD',
+  3: 'AS',
+  4: 'AS_Pct',
+  11: 'HP',
+  12: 'HP',
+  14: 'AP',
+  15: 'MR',
+  28: 'BonusAD',
+  29: 'BonusHP',
+  36: 'MaxHP',
+};
+
+function resolveStatName(mStat, mStatFormula) {
+  if (typeof mStat === 'string') return mStat;
+  const base = STAT_ENUM[mStat] || 'AP';
+  if (mStatFormula === 1 && base === 'AD') return 'BaseAD';
+  if (mStatFormula === 2 && base === 'AD') return 'BonusAD';
+  if (mStatFormula === 2 && base === 'HP') return 'BonusHP';
+  return base;
+}
+
 function normalizeDataValues(rawDV) {
   if (!Array.isArray(rawDV)) return {};
   const out = {};
@@ -41,11 +65,9 @@ function normalizeFormulaPart(p) {
     case 'NamedDataValueCalculationPart':
       return { kind: 'dataValue', name: p.mDataValue };
     case 'StatByNamedDataValueCalculationPart':
-      // Multiplies a stat (default: AP) by a named data value (ratio)
-      return { kind: 'statByDataValue', name: p.mDataValue, stat: p.mStat || 'AP' };
+      return { kind: 'statByDataValue', name: p.mDataValue, stat: resolveStatName(p.mStat, p.mStatFormula) };
     case 'StatByCoefficientCalculationPart':
-      // Stat (default: AP) * fixed coefficient
-      return { kind: 'statByCoefficient', coefficient: p.mCoefficient, stat: p.mStat || 'AP' };
+      return { kind: 'statByCoefficient', coefficient: p.mCoefficient, stat: resolveStatName(p.mStat, p.mStatFormula) };
     case 'ByCharLevelFormulaCalculationPart':
       return { kind: 'byCharLevel', values: p.values };
     case 'NumberCalculationPart':
@@ -184,32 +206,6 @@ export const championList = champions.map((c) => ({
 
 export function getChampion(id) {
   return championIndex[id];
-}
-
-// Stat enum from bin.json (mStat field in calculation parts)
-const STAT_ENUM = {
-  0: 'AP',
-  1: 'Armor',
-  2: 'AD',
-  3: 'AS',
-  4: 'AS_Pct',
-  11: 'HP',
-  14: 'AP',
-  15: 'MR',
-  28: 'BonusAD',
-  29: 'BonusHP',
-  36: 'MaxHP',
-};
-
-// StatFormula: 0=Total, 1=Base, 2=Bonus
-const STAT_FORMULA = { 0: '', 1: 'Base', 2: 'Bonus' };
-
-function resolveStatName(mStat, mStatFormula) {
-  const base = STAT_ENUM[mStat] || 'AP';
-  if (mStatFormula === 1 && base === 'AD') return 'BaseAD';
-  if (mStatFormula === 2 && base === 'AD') return 'BonusAD';
-  if (mStatFormula === 2 && base === 'HP') return 'BonusHP';
-  return base;
 }
 
 function normalizeItemCalculations(rawCalc) {
