@@ -61,17 +61,29 @@ export default function ComboPanel({ build, setCombo }) {
           {combo.length === 0 && <span className="combo-empty">No abilities yet — click Q/W/E/R above to build a combo</span>}
           {combo.map((key, idx) => {
             const isAA = key === 'AA';
-            const ability = !isAA ? champ?.abilities.find((a) => a.key === key) : null;
+            const isItem = key.startsWith('ITEM_');
+            const itemId = isItem ? key.slice(5) : null;
+            const ability = !isAA && !isItem ? champ?.abilities.find((a) => a.key === key) : null;
             const iconUrl = ability?.icon
               ? (key === 'P'
                   ? `${DDRAGON_IMG}/passive/${ability.icon}`
                   : `${DDRAGON_IMG}/spell/${ability.icon}`)
               : null;
+            const itemIconUrl = isItem ? `${DDRAGON_IMG}/item/${itemId}.png` : null;
+            const stepStyle = isAA
+              ? { borderColor: '#f39c12', color: '#f39c12' }
+              : isItem
+              ? { borderColor: '#e67e22', color: '#e67e22' }
+              : undefined;
+            const title = isAA ? 'Auto Attack' : isItem ? `Item Active` : ability?.name;
             return (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className="combo-step">
-                  <div className="combo-icon" title={isAA ? 'Auto Attack' : ability?.name} style={isAA ? { borderColor: '#f39c12', color: '#f39c12' } : undefined}>
-                    {isAA ? <span>AA</span> : iconUrl ? <img src={iconUrl} alt={key} /> : <span>{key}</span>}
+                  <div className="combo-icon" title={title} style={stepStyle}>
+                    {isAA ? <span>AA</span>
+                      : isItem ? <img src={itemIconUrl} alt="Item" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      : iconUrl ? <img src={iconUrl} alt={key} />
+                      : <span>{key}</span>}
                   </div>
                   <span className="combo-step-number">{idx + 1}</span>
                   <button className="remove-step" onClick={() => removeStep(idx)}>×</button>

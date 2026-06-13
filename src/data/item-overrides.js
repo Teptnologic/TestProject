@@ -262,8 +262,24 @@ export const ITEM_OVERRIDES = {
   4629: { // Cosmic Drive
     abilityHaste: 30,
   },
+  6672: { // Kraken Slayer
+    passive: {
+      type: 'kraken',
+      procEvery: 3,
+      flatDamageMin: 35,
+      flatDamageMax: 75,
+      bonusAdRatio: 0.65,
+      damageType: 'true',
+    },
+  },
   3152: { // Hextech Rocketbelt
     abilityHaste: 15,
+    active: {
+      name: 'Rocketbelt',
+      flatDamage: 125,
+      apRatio: 0.15,
+      damageType: 'magic',
+    },
   },
   3165: { // Morellonomicon
     abilityHaste: 15,
@@ -297,6 +313,15 @@ export const ITEM_OVERRIDES = {
   },
   4633: { // Riftmaker
     abilityHaste: 15,
+  },
+  3146: { // Hextech Gunblade
+    active: {
+      name: 'Gunblade',
+      flatDamageMin: 175,
+      flatDamageMax: 250,
+      apRatio: 0.30,
+      damageType: 'magic',
+    },
   },
   3110: { // Frozen Heart
     abilityHaste: 20,

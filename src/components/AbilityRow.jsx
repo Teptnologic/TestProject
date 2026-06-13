@@ -1,11 +1,14 @@
+import { useMemo } from 'react';
 import meta from '../data/generated/meta.json';
 import GameTooltip from './GameTooltip';
 import { formatAbilityTooltip, formatDamageTooltip, lolHtmlToSafeHtml } from '../utils/tooltip';
+import { getEquippedActives } from '../utils/damage';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
 export default function AbilityRow({ build, setBuild, stats, setCombo }) {
   const champ = build.champion;
+  const actives = useMemo(() => getEquippedActives(build.items), [build.items]);
   if (!champ) return null;
 
   function adjustRank(key, delta) {
@@ -92,6 +95,28 @@ export default function AbilityRow({ build, setBuild, stats, setCombo }) {
           </div>
         );
       })}
+      {actives.map((active) => (
+        <div className="ability-box" key={`item-${active.id}`}>
+          <GameTooltip
+            title={active.name}
+            html={`Item active from ${active.itemName}. Click to add to combo.`}
+          >
+            <div
+              className="ability-icon"
+              onClick={() => addToCombo(`ITEM_${active.id}`)}
+              style={{ borderColor: '#e67e22' }}
+            >
+              <img
+                src={`${DDRAGON_IMG}/item/${active.id}.png`}
+                alt={active.name}
+                onError={(e) => { e.currentTarget.replaceWith(document.createTextNode(active.name.slice(0, 2))); }}
+              />
+            </div>
+          </GameTooltip>
+          <div className="ability-rank"><span className="rank-value" style={{ fontSize: '9px', color: '#e67e22' }}>Active</span></div>
+          <div className="ability-label">{active.name.slice(0, 14)}</div>
+        </div>
+      ))}
     </div>
   );
 }
