@@ -3,7 +3,7 @@
 import { totalStats, baseStatsAtLevel } from './stats.js';
 
 // Compute auto-attack damage (physical = total AD), with crit expected value and on-hits
-function computeAADamage(attacker, items, aaIndex) {
+function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP) {
   // Crit expected value
   const critChance = Math.min(1, attacker.crit || 0);
   let critDamageMultiplier = 1.75;
@@ -55,11 +55,11 @@ function computeAADamage(attacker, items, aaIndex) {
         break;
       }
       case 'botrk': {
-        const currentHP = attacker._targetCurrentHP || attacker._targetMaxHP || 2000;
+        const hp = targetCurrentHP || 2000;
         results.push({
           abilityKey: 'AA',
-          abilityName: 'BotRK On-Hit',
-          raw: currentHP * (p.currentHpRatioMelee || 0.09),
+          abilityName: `BotRK On-Hit (${Math.round(hp)} HP)`,
+          raw: hp * (p.currentHpRatioMelee || 0.09),
           type: 'physical',
         });
         break;
@@ -71,6 +71,12 @@ function computeAADamage(attacker, items, aaIndex) {
           let raw = 0;
           if (bin?.calculations?.DamageAmount) {
             raw = evaluateItemCalc(bin.calculations.DamageAmount, bin.dataValues || {}, attacker, attacker.level || 1);
+          }
+          // Missing health scaling: damage * (1 + (MaxAmpNumber - 1) * missingHealthPct)
+          const maxAmp = bin?.dataValues?.MaxAmpNumber || 1;
+          if (maxAmp > 1 && targetMaxHP > 0) {
+            const missingPct = Math.max(0, 1 - (targetCurrentHP || targetMaxHP) / targetMaxHP);
+            raw *= 1 + (maxAmp - 1) * missingPct;
           }
           results.push({
             abilityKey: 'AA',
@@ -413,6 +419,8 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let lastWasSpell = false;
   let itemProcsUsed = false;
   let aaCount = 0;
+  const targetMaxHP = (target.hp || 0) + (target.shield || 0);
+  let targetCurrentHP = targetMaxHP;
 
   function addDmg(result) {
     const post = applyResistance(result.raw, result.type, target, attackerStats);
@@ -420,11 +428,12 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     else if (result.type === 'true') totalTrue += post;
     else totalMagic += post;
     steps.push({ ...result, post });
+    targetCurrentHP = Math.max(0, targetCurrentHP - post);
   }
 
   for (const step of combo) {
     if (step === 'AA') {
-      const aaResults = computeAADamage(attackerStats, items, aaCount);
+      const aaResults = computeAADamage(attackerStats, items, aaCount, targetCurrentHP, targetMaxHP);
       aaCount++;
       for (const r of aaResults) addDmg(r);
       if (lastWasSpell) {
