@@ -65,17 +65,18 @@ function computeAADamage(attacker, items, aaIndex) {
         break;
       }
       case 'kraken': {
-        const procEvery = p.procEvery || 3;
+        const bin = item?.bin;
+        const procEvery = bin?.dataValues?.AttackCount || 3;
         if ((aaIndex + 1) % procEvery === 0) {
-          const lvl = attacker.level || 1;
-          const t = (lvl - 1) / 17;
-          const flat = (p.flatDamageMin || 35) + ((p.flatDamageMax || 75) - (p.flatDamageMin || 35)) * t;
-          const raw = flat + (attacker.bonusAD || 0) * (p.bonusAdRatio || 0.65);
+          let raw = 0;
+          if (bin?.calculations?.DamageAmount) {
+            raw = evaluateItemCalc(bin.calculations.DamageAmount, bin.dataValues || {}, attacker, attacker.level || 1);
+          }
           results.push({
             abilityKey: 'AA',
             abilityName: `Kraken Slayer (${aaIndex + 1}${ordSuffix(aaIndex + 1)} hit)`,
             raw,
-            type: 'true',
+            type: p.damageType || 'physical',
           });
         }
         break;
@@ -193,7 +194,7 @@ function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
         if (part.breakpoints) {
           for (const bp of part.breakpoints) {
             if (charLevel >= (bp.mLevel || 1)) {
-              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || 0;
+              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || bp.mBonusPerLevelAtAndAfter || 0;
               val += perLevel * (charLevel - (bp.mLevel || 1));
             }
           }

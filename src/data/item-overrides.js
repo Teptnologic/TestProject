@@ -262,14 +262,13 @@ export const ITEM_OVERRIDES = {
   4629: { // Cosmic Drive
     abilityHaste: 30,
   },
-  6672: { // Kraken Slayer
+  6672: { // Kraken Slayer — "Bring It Down"
+    // Every 3rd hit deals bonus physical damage (from bin: DamageAmount calc),
+    // increased by up to 75% based on target missing health (MaxAmpNumber=1.75).
+    // Damage values and proc count come from bin data, override just flags the type.
     passive: {
       type: 'kraken',
-      procEvery: 3,
-      flatDamageMin: 35,
-      flatDamageMax: 75,
-      bonusAdRatio: 0.65,
-      damageType: 'true',
+      damageType: 'physical',
     },
   },
   3152: { // Hextech Rocketbelt
