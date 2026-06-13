@@ -7,7 +7,7 @@ import StatsDisplay from './StatsDisplay';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
-export default function ChampionPanel({ build, setBuild, stats }) {
+export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
@@ -76,7 +76,7 @@ export default function ChampionPanel({ build, setBuild, stats }) {
         {build.champion && (
           <>
             <div className="section-label">Abilities</div>
-            <AbilityRow build={build} setBuild={setBuild} stats={stats} />
+            <AbilityRow build={build} setBuild={setBuild} stats={stats} setCombo={setCombo} />
 
             <div className="section-label">Items</div>
             <ItemSlots build={build} setBuild={setBuild} />

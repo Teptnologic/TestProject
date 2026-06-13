@@ -16,6 +16,17 @@ const STAT_LABELS = {
   FlatCritChanceMod: '% Crit',
 };
 
+const TAG_STAT_MAP = {
+  Mage: ['FlatMagicDamageMod'],
+  Assassin: ['FlatPhysicalDamageMod', 'FlatMagicDamageMod'],
+  Fighter: ['FlatPhysicalDamageMod', 'FlatHPPoolMod'],
+  Tank: ['FlatHPPoolMod', 'FlatArmorMod', 'FlatSpellBlockMod'],
+  Marksman: ['FlatPhysicalDamageMod', 'FlatCritChanceMod', 'PercentAttackSpeedMod'],
+  Support: ['FlatHPPoolMod', 'FlatMagicDamageMod'],
+};
+
+const MIN_COMPLETED_GOLD = 2500;
+
 function summarizeStats(stats) {
   if (!stats) return '';
   return Object.entries(stats)
@@ -29,24 +40,51 @@ function summarizeStats(stats) {
     .join(', ');
 }
 
+function getRecommendedItems(championTags) {
+  if (!championTags || !championTags.length) return [];
+  const relevantStats = new Set();
+  for (const tag of championTags) {
+    const stats = TAG_STAT_MAP[tag];
+    if (stats) stats.forEach((s) => relevantStats.add(s));
+  }
+  if (!relevantStats.size) return [];
+
+  return itemList
+    .filter((item) => {
+      if (!item.gold || item.gold < MIN_COMPLETED_GOLD) return false;
+      if (!item.stats) return false;
+      return [...relevantStats].some((stat) => item.stats[stat]);
+    })
+    .sort((a, b) => {
+      const aScore = [...relevantStats].reduce((sum, s) => sum + (a.stats[s] ? 1 : 0), 0);
+      const bScore = [...relevantStats].reduce((sum, s) => sum + (b.stats[s] ? 1 : 0), 0);
+      if (bScore !== aScore) return bScore - aScore;
+      return (b.gold || 0) - (a.gold || 0);
+    })
+    .slice(0, 20);
+}
+
 export default function ItemSlots({ build, setBuild }) {
   const [openSlot, setOpenSlot] = useState(null);
   const [query, setQuery] = useState('');
 
-  // build.items may be resolved objects (from fullBuild) or raw IDs.
-  // We need the raw IDs for lookups, so extract them.
   const slots = build.items.map((item) => {
     if (!item) return null;
     if (typeof item === 'number') return item;
     return item.id;
   });
 
+  const championTags = build.champion?.tags;
+
+  const recommended = useMemo(() => getRecommendedItems(championTags), [championTags]);
+
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    let list = itemList;
-    if (q) list = list.filter((i) => i.name?.toLowerCase().includes(q));
-    return list.slice(0, 60);
+    if (!q) return [];
+    return itemList.filter((i) => i.name?.toLowerCase().includes(q)).slice(0, 60);
   }, [query]);
+
+  const showRecommended = !query.trim() && recommended.length > 0;
 
   function pickItem(item) {
     setBuild((b) => {
@@ -65,6 +103,23 @@ export default function ItemSlots({ build, setBuild }) {
       items[idx] = null;
       return { ...b, items };
     });
+  }
+
+  function renderItemRow(item) {
+    return (
+      <div key={item.id} className="item-result" onClick={() => pickItem(item)}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img
+            src={`${DDRAGON_IMG}/item/${item.id}.png`}
+            alt=""
+            style={{ width: 24, height: 24, borderRadius: 3 }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+          {item.name}
+        </span>
+        <span className="stats">{item.gold}g — {summarizeStats(item.stats)}</span>
+      </div>
+    );
   }
 
   return (
@@ -119,20 +174,21 @@ export default function ItemSlots({ build, setBuild }) {
               onChange={(e) => setQuery(e.target.value)}
             />
             <div className="item-results">
-              {filtered.map((item) => (
-                <div key={item.id} className="item-result" onClick={() => pickItem(item)}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <img
-                      src={`${DDRAGON_IMG}/item/${item.id}.png`}
-                      alt=""
-                      style={{ width: 24, height: 24, borderRadius: 3 }}
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                    {item.name}
-                  </span>
-                  <span className="stats">{item.gold}g — {summarizeStats(item.stats)}</span>
-                </div>
-              ))}
+              {showRecommended && (
+                <>
+                  <div className="item-section-label">Recommended for {championTags?.join(' / ')}</div>
+                  {recommended.map(renderItemRow)}
+                </>
+              )}
+              {!showRecommended && filtered.length === 0 && query.trim() && (
+                <div className="item-no-results">No items found</div>
+              )}
+              {filtered.length > 0 && (
+                <>
+                  {showRecommended && <div className="item-section-label">Search Results</div>}
+                  {filtered.map(renderItemRow)}
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { COMBO_TEMPLATES, getCustomCombos, saveCustomCombo, deleteCustomCombo } 
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
-export default function ComboPanel({ build, setBuild }) {
+export default function ComboPanel({ build, setCombo }) {
   const champ = build.champion;
   const combo = build.combo;
   const champId = champ?.id;
@@ -20,15 +20,15 @@ export default function ComboPanel({ build, setBuild }) {
   const builtInTemplates = champId ? (COMBO_TEMPLATES[champId] || []) : [];
 
   function removeStep(idx) {
-    setBuild((b) => ({ ...b, combo: b.combo.filter((_, i) => i !== idx) }));
+    setCombo((prev) => prev.filter((_, i) => i !== idx));
   }
 
   function clearCombo() {
-    setBuild((b) => ({ ...b, combo: [] }));
+    setCombo([]);
   }
 
   function loadCombo(keys) {
-    setBuild((b) => ({ ...b, combo: [...keys] }));
+    setCombo([...keys]);
   }
 
   function handleSave() {

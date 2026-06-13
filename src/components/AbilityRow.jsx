@@ -4,7 +4,7 @@ import { formatAbilityTooltip, formatDamageTooltip, lolHtmlToSafeHtml } from '..
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
-export default function AbilityRow({ build, setBuild, stats }) {
+export default function AbilityRow({ build, setBuild, stats, setCombo }) {
   const champ = build.champion;
   if (!champ) return null;
 
@@ -19,7 +19,7 @@ export default function AbilityRow({ build, setBuild, stats }) {
   }
 
   function addToCombo(key) {
-    setBuild((b) => ({ ...b, combo: [...b.combo, key] }));
+    setCombo((prev) => [...prev, key]);
   }
 
   return (

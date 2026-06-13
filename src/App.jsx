@@ -16,7 +16,6 @@ const INITIAL_BUILD = {
   level: 11,
   ranks: { P: 1, Q: 5, W: 1, E: 3, R: 2 },
   items: [null, null, null, null, null, null],
-  combo: [],
 };
 
 const INITIAL_TARGET = {
@@ -39,22 +38,46 @@ function resolveItems(itemIds) {
 }
 
 export default function App() {
-  const [build, setBuild] = useState(INITIAL_BUILD);
+  const [builds, setBuilds] = useState([{ ...INITIAL_BUILD }]);
+  const [activeBuildIdx, setActiveBuildIdx] = useState(0);
+  const [combo, setCombo] = useState([]);
   const [target, setTarget] = useState(INITIAL_TARGET);
 
-  const champion = build.championId ? getChampion(build.championId) : null;
-  const items = useMemo(() => resolveItems(build.items), [build.items]);
-  const fullBuild = { ...build, champion, items };
+  const resolvedBuilds = useMemo(() => builds.map((build) => {
+    const champion = build.championId ? getChampion(build.championId) : null;
+    const items = resolveItems(build.items);
+    const stats = champion ? totalStats(champion.stats, build.level, items) : null;
+    return { ...build, champion, items, stats };
+  }), [builds]);
 
-  const stats = useMemo(() => {
-    if (!champion) return null;
-    return totalStats(champion.stats, build.level, items);
-  }, [champion, build.level, items]);
+  const damageResults = useMemo(() => resolvedBuilds.map((rb) => {
+    if (!rb.champion || !rb.stats || !combo.length) return null;
+    return computeCombo(combo, rb.champion, rb.ranks, rb.stats, target, rb.level, rb.items);
+  }), [resolvedBuilds, combo, target]);
 
-  const damageResult = useMemo(() => {
-    if (!champion || !stats || !build.combo.length) return null;
-    return computeCombo(build.combo, champion, build.ranks, stats, target, build.level, items);
-  }, [champion, stats, build.combo, build.ranks, target, build.level, items]);
+  const activeBuild = resolvedBuilds[activeBuildIdx] || resolvedBuilds[0];
+
+  function setActiveBuild(updater) {
+    setBuilds((prev) => {
+      const next = [...prev];
+      const idx = activeBuildIdx < next.length ? activeBuildIdx : 0;
+      next[idx] = typeof updater === 'function' ? updater(next[idx]) : updater;
+      return next;
+    });
+  }
+
+  function addBuild() {
+    if (builds.length >= 2) return;
+    setBuilds((prev) => [...prev, { ...INITIAL_BUILD }]);
+    setActiveBuildIdx(1);
+  }
+
+  function removeBuild(idx) {
+    setBuilds((prev) => prev.filter((_, i) => i !== idx));
+    setActiveBuildIdx(0);
+  }
+
+  const fullBuild = { ...activeBuild, combo };
 
   return (
     <>
@@ -63,11 +86,33 @@ export default function App() {
         <span className="patch">Patch {meta.version}</span>
       </header>
 
+      <div className="build-tabs">
+        {builds.map((_, i) => (
+          <button
+            key={i}
+            className={`build-tab ${i === activeBuildIdx ? 'active' : ''}`}
+            onClick={() => setActiveBuildIdx(i)}
+          >
+            <span className={`build-tab-dot ${resolvedBuilds[i]?.champion ? 'has-champ' : ''}`} />
+            Build {String.fromCharCode(65 + i)}
+            {resolvedBuilds[i]?.champion && (
+              <span className="build-tab-champ">{resolvedBuilds[i].champion.name}</span>
+            )}
+            {builds.length > 1 && (
+              <span className="build-tab-close" onClick={(e) => { e.stopPropagation(); removeBuild(i); }}>×</span>
+            )}
+          </button>
+        ))}
+        {builds.length < 2 && (
+          <button className="build-tab add" onClick={addBuild}>+ Compare</button>
+        )}
+      </div>
+
       <main className="main-grid">
-        <ChampionPanel build={fullBuild} setBuild={setBuild} stats={stats} />
+        <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
         <TargetPanel target={target} setTarget={setTarget} />
-        <ComboPanel build={fullBuild} setBuild={setBuild} />
-        <DamagePanel result={damageResult} target={target} />
+        <ComboPanel build={fullBuild} setCombo={setCombo} />
+        <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
       </main>
     </>
   );
