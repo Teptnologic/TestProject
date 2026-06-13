@@ -406,7 +406,98 @@ input { font-family: inherit; }
 }
 
 .combo-btn:hover { border-color: #c89b3c; color: #c89b3c; }
+.combo-btn.save-btn { border-color: #3498db; color: #3498db; }
+.combo-btn.save-btn:hover { border-color: #2980b9; color: #2980b9; }
 .combo-add-hint { font-size: 11px; color: #5a6270; margin-top: 10px; text-align: center; }
+
+.combo-save-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.combo-save-input {
+  flex: 1;
+  background: #1e2330;
+  border: 1px solid #2a2f3a;
+  color: #c8cdd3;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.combo-save-input:focus { outline: none; border-color: #3498db; }
+
+.combo-templates {
+  margin-top: 14px;
+  border-top: 1px solid #2a2f3a;
+  padding-top: 12px;
+}
+
+.combo-templates-label {
+  font-size: 11px;
+  color: #8b92a0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.combo-template-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.combo-template-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 12px;
+  background: #1e2330;
+  border: 1px solid #2a2f3a;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  text-align: left;
+  min-width: 120px;
+}
+
+.combo-template-btn:hover { border-color: #c89b3c; }
+.combo-template-btn.custom { border-color: #2a4a3a; }
+.combo-template-btn.custom:hover { border-color: #27ae60; }
+
+.combo-template-btn .template-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c8cdd3;
+}
+
+.combo-template-btn .template-preview {
+  font-size: 10px;
+  color: #5a6270;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.combo-template-btn .template-delete {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 12px;
+  color: #5a6270;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.combo-template-btn .template-delete:hover { color: #e74c3c; background: rgba(231,76,60,0.15); }
 
 .damage-summary {
   display: grid;

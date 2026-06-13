@@ -1,10 +1,23 @@
+import { useState, useEffect } from 'react';
 import meta from '../data/generated/meta.json';
+import { COMBO_TEMPLATES, getCustomCombos, saveCustomCombo, deleteCustomCombo } from '../data/combo-templates';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
 export default function ComboPanel({ build, setBuild }) {
   const champ = build.champion;
   const combo = build.combo;
+  const champId = champ?.id;
+
+  const [customCombos, setCustomCombos] = useState([]);
+  const [saveName, setSaveName] = useState('');
+  const [showSave, setShowSave] = useState(false);
+
+  useEffect(() => {
+    if (champId) setCustomCombos(getCustomCombos(champId));
+  }, [champId]);
+
+  const builtInTemplates = champId ? (COMBO_TEMPLATES[champId] || []) : [];
 
   function removeStep(idx) {
     setBuild((b) => ({ ...b, combo: b.combo.filter((_, i) => i !== idx) }));
@@ -14,8 +27,25 @@ export default function ComboPanel({ build, setBuild }) {
     setBuild((b) => ({ ...b, combo: [] }));
   }
 
-  function presetCombo(keys) {
-    setBuild((b) => ({ ...b, combo: keys }));
+  function loadCombo(keys) {
+    setBuild((b) => ({ ...b, combo: [...keys] }));
+  }
+
+  function handleSave() {
+    if (!saveName.trim() || !combo.length || !champId) return;
+    saveCustomCombo(champId, saveName.trim(), [...combo]);
+    setCustomCombos(getCustomCombos(champId));
+    setSaveName('');
+    setShowSave(false);
+  }
+
+  function handleDelete(idx) {
+    deleteCustomCombo(champId, idx);
+    setCustomCombos(getCustomCombos(champId));
+  }
+
+  function formatComboPreview(keys) {
+    return keys.join(' → ');
   }
 
   return (
@@ -51,15 +81,60 @@ export default function ComboPanel({ build, setBuild }) {
             );
           })}
         </div>
+
         <div className="combo-controls">
           <button className="combo-btn" onClick={clearCombo}>Clear</button>
-          {champ && (
-            <>
-              <button className="combo-btn" onClick={() => presetCombo(['E', 'Q', 'AA', 'R'])}>E → Q → AA → R</button>
-              <button className="combo-btn" onClick={() => presetCombo(['Q', 'E', 'AA', 'W', 'R', 'AA'])}>Full + AA</button>
-            </>
+          {combo.length > 0 && (
+            <button className="combo-btn save-btn" onClick={() => setShowSave(!showSave)}>
+              {showSave ? 'Cancel' : 'Save Combo'}
+            </button>
           )}
         </div>
+
+        {showSave && (
+          <div className="combo-save-row">
+            <input
+              className="combo-save-input"
+              placeholder="Combo name..."
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              autoFocus
+            />
+            <button className="combo-btn save-btn" onClick={handleSave} disabled={!saveName.trim()}>Save</button>
+          </div>
+        )}
+
+        {champ && (builtInTemplates.length > 0 || customCombos.length > 0) && (
+          <div className="combo-templates">
+            <div className="combo-templates-label">Templates</div>
+            <div className="combo-template-list">
+              {builtInTemplates.map((t, i) => (
+                <button
+                  key={`builtin-${i}`}
+                  className="combo-template-btn"
+                  onClick={() => loadCombo(t.keys)}
+                  title={formatComboPreview(t.keys)}
+                >
+                  <span className="template-name">{t.name}</span>
+                  <span className="template-preview">{formatComboPreview(t.keys)}</span>
+                </button>
+              ))}
+              {customCombos.map((t, i) => (
+                <button
+                  key={`custom-${i}`}
+                  className="combo-template-btn custom"
+                  onClick={() => loadCombo(t.keys)}
+                  title={formatComboPreview(t.keys)}
+                >
+                  <span className="template-name">{t.name}</span>
+                  <span className="template-preview">{formatComboPreview(t.keys)}</span>
+                  <span className="template-delete" onClick={(e) => { e.stopPropagation(); handleDelete(i); }}>×</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
