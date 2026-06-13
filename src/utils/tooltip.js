@@ -1,5 +1,15 @@
 import { evaluateCalc } from './damage.js';
 
+const STAT_DISPLAY = {
+  AP: 'AP',
+  AD: 'AD',
+  BaseAD: 'base AD',
+  BonusAD: 'bonus AD',
+  BonusHP: 'bonus HP',
+  MaxHP: 'max HP',
+  HP: 'HP',
+};
+
 const TAG_CLASS = {
   magicDamage: 'lol-magic',
   physicalDamage: 'lol-physical',
@@ -125,4 +135,116 @@ export function lolHtmlToSafeHtml(html) {
 
 export function formatItemTooltip(item) {
   return lolHtmlToSafeHtml(item.description || item.name || '');
+}
+
+function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
+  if (!calc?.parts?.length) return null;
+  const idx = dataValueIndex(rank);
+  const segments = [];
+
+  for (const part of calc.parts) {
+    switch (part.kind) {
+      case 'dataValue': {
+        const arr = dataValues?.[part.name];
+        const val = arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
+        if (val === 0) continue;
+        const isPercent = /percent|ratio|hpdamage/i.test(part.name) || (val > 0 && val < 1);
+        const hpBased = /hp|health/i.test(part.name);
+        segments.push({
+          flat: isPercent ? null : val,
+          pct: isPercent ? val : null,
+          label: hpBased ? 'max HP' : null,
+        });
+        break;
+      }
+      case 'statByDataValue': {
+        const arr = dataValues?.[part.name];
+        const ratio = arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
+        if (ratio === 0) continue;
+        const statLabel = STAT_DISPLAY[part.stat] || part.stat;
+        const isPercent = ratio > 0 && ratio <= 5;
+        segments.push({
+          flat: null,
+          pct: isPercent ? ratio : null,
+          label: statLabel,
+        });
+        break;
+      }
+      case 'statByCoefficient': {
+        if (!part.coefficient) continue;
+        const statLabel = STAT_DISPLAY[part.stat] || part.stat;
+        segments.push({
+          flat: null,
+          pct: part.coefficient,
+          label: statLabel,
+        });
+        break;
+      }
+      case 'byCharLevelInterp': {
+        const t = Math.max(0, Math.min(1, ((charLevel || 1) - 1) / 17));
+        const val = (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
+        segments.push({ flat: val, pct: null, label: null });
+        break;
+      }
+      case 'byCharLevelBreakpoints': {
+        let val = part.baseValue || 0;
+        if (part.breakpoints) {
+          for (const bp of part.breakpoints) {
+            const lvl = charLevel || 1;
+            if (lvl >= (bp.mLevel || 1)) {
+              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || 0;
+              val += perLevel * (lvl - (bp.mLevel || 1));
+            }
+          }
+        }
+        segments.push({ flat: val, pct: null, label: null });
+        break;
+      }
+      case 'number': {
+        if (part.value) segments.push({ flat: part.value, pct: null, label: null });
+        break;
+      }
+    }
+  }
+
+  if (!segments.length) return null;
+
+  const pieces = [];
+  for (const s of segments) {
+    if (s.flat != null) {
+      pieces.push(Math.round(s.flat));
+    } else if (s.pct != null) {
+      const pctVal = s.pct * 100;
+      const pctStr = pctVal < 1 && pctVal > 0
+        ? pctVal.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + '%'
+        : Math.round(pctVal) + '%';
+      pieces.push(s.label ? `${pctStr} ${s.label}` : pctStr);
+    }
+  }
+  return pieces.join(' + ');
+}
+
+function humanizeCalcName(name) {
+  return name
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^./, (c) => c.toUpperCase())
+    .replace(/Calc$/, '')
+    .trim();
+}
+
+export function formatPassiveDamageTooltip(ability, attacker, charLevel) {
+  const calcs = ability.calculations;
+  const dv = ability.dataValues;
+  if (!calcs || !Object.keys(calcs).length) return '';
+
+  const lines = [];
+  for (const [name, calc] of Object.entries(calcs)) {
+    if (/cooldown|duration|speed|move|heal|shield|range|radius|size/i.test(name)) continue;
+    const desc = describeCalcParts(calc, dv, 1, attacker, charLevel);
+    if (!desc) continue;
+    const label = humanizeCalcName(name);
+    lines.push(`<span class="lol-keyword">${label}</span>: <span class="lol-magic">${desc}</span>`);
+  }
+
+  return lines.length ? lines.join('<br>') : '';
 }

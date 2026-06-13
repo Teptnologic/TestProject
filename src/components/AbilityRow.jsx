@@ -1,6 +1,6 @@
 import meta from '../data/generated/meta.json';
 import GameTooltip from './GameTooltip';
-import { formatAbilityTooltip, lolHtmlToSafeHtml } from '../utils/tooltip';
+import { formatAbilityTooltip, formatPassiveDamageTooltip, lolHtmlToSafeHtml } from '../utils/tooltip';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
@@ -50,9 +50,15 @@ export default function AbilityRow({ build, setBuild, stats }) {
           : null;
 
         const rankForTooltip = ability.key === 'P' ? 1 : rank;
-        const tooltipHtml = lolHtmlToSafeHtml(
+        let tooltipHtml = lolHtmlToSafeHtml(
           formatAbilityTooltip(ability, rankForTooltip, stats || {}, build.level),
         );
+        if (ability.key === 'P' && ability.calculations && Object.keys(ability.calculations).length) {
+          const dmgHtml = formatPassiveDamageTooltip(ability, stats || {}, build.level);
+          if (dmgHtml) {
+            tooltipHtml += '<br><br><span class="lol-rules">— Calculated Values —</span><br>' + dmgHtml;
+          }
+        }
         const costLine =
           ability.cost && rankForTooltip > 0
             ? `Cost: ${ability.cost[rankForTooltip - 1] ?? ability.cost.at(-1)}`
