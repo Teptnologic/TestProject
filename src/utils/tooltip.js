@@ -233,14 +233,18 @@ function humanizeCalcName(name) {
 }
 
 export function formatPassiveDamageTooltip(ability, attacker, charLevel) {
+  return formatDamageTooltip(ability, 1, attacker, charLevel);
+}
+
+export function formatDamageTooltip(ability, rank, attacker, charLevel) {
   const calcs = ability.calculations;
   const dv = ability.dataValues;
   if (!calcs || !Object.keys(calcs).length) return '';
 
   const lines = [];
   for (const [name, calc] of Object.entries(calcs)) {
-    if (/cooldown|duration|speed|move|heal|shield|range|radius|size/i.test(name)) continue;
-    const desc = describeCalcParts(calc, dv, 1, attacker, charLevel);
+    if (/cooldown|duration|speed|move|heal|shield|range|radius|size|cost|mana/i.test(name)) continue;
+    const desc = describeCalcParts(calc, dv, rank, attacker, charLevel);
     if (!desc) continue;
     const label = humanizeCalcName(name);
     lines.push(`<span class="lol-keyword">${label}</span>: <span class="lol-magic">${desc}</span>`);
