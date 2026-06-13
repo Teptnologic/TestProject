@@ -3,6 +3,7 @@ import { itemList, getItem } from '../data';
 import meta from '../data/generated/meta.json';
 import GameTooltip from './GameTooltip';
 import { formatItemTooltip } from '../utils/tooltip';
+import { CHAMPION_ITEMS } from '../data/item-recommendations';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
@@ -15,17 +16,6 @@ const STAT_LABELS = {
   PercentAttackSpeedMod: '% AS',
   FlatCritChanceMod: '% Crit',
 };
-
-const TAG_STAT_MAP = {
-  Mage: ['FlatMagicDamageMod'],
-  Assassin: ['FlatPhysicalDamageMod', 'FlatMagicDamageMod'],
-  Fighter: ['FlatPhysicalDamageMod', 'FlatHPPoolMod'],
-  Tank: ['FlatHPPoolMod', 'FlatArmorMod', 'FlatSpellBlockMod'],
-  Marksman: ['FlatPhysicalDamageMod', 'FlatCritChanceMod', 'PercentAttackSpeedMod'],
-  Support: ['FlatHPPoolMod', 'FlatMagicDamageMod'],
-};
-
-const MIN_COMPLETED_GOLD = 2500;
 
 function summarizeStats(stats) {
   if (!stats) return '';
@@ -40,28 +30,11 @@ function summarizeStats(stats) {
     .join(', ');
 }
 
-function getRecommendedItems(championTags) {
-  if (!championTags || !championTags.length) return [];
-  const relevantStats = new Set();
-  for (const tag of championTags) {
-    const stats = TAG_STAT_MAP[tag];
-    if (stats) stats.forEach((s) => relevantStats.add(s));
-  }
-  if (!relevantStats.size) return [];
-
-  return itemList
-    .filter((item) => {
-      if (!item.gold || item.gold < MIN_COMPLETED_GOLD) return false;
-      if (!item.stats) return false;
-      return [...relevantStats].some((stat) => item.stats[stat]);
-    })
-    .sort((a, b) => {
-      const aScore = [...relevantStats].reduce((sum, s) => sum + (a.stats[s] ? 1 : 0), 0);
-      const bScore = [...relevantStats].reduce((sum, s) => sum + (b.stats[s] ? 1 : 0), 0);
-      if (bScore !== aScore) return bScore - aScore;
-      return (b.gold || 0) - (a.gold || 0);
-    })
-    .slice(0, 20);
+function getRecommendedItems(championId) {
+  if (!championId) return [];
+  const itemIds = CHAMPION_ITEMS[championId];
+  if (!itemIds) return [];
+  return itemIds.map((id) => getItem(id)).filter(Boolean);
 }
 
 export default function ItemSlots({ build, setBuild }) {
@@ -74,9 +47,9 @@ export default function ItemSlots({ build, setBuild }) {
     return item.id;
   });
 
-  const championTags = build.champion?.tags;
+  const championId = build.champion?.id;
 
-  const recommended = useMemo(() => getRecommendedItems(championTags), [championTags]);
+  const recommended = useMemo(() => getRecommendedItems(championId), [championId]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -176,19 +149,14 @@ export default function ItemSlots({ build, setBuild }) {
             <div className="item-results">
               {showRecommended && (
                 <>
-                  <div className="item-section-label">Recommended for {championTags?.join(' / ')}</div>
+                  <div className="item-section-label">Recommended</div>
                   {recommended.map(renderItemRow)}
                 </>
               )}
               {!showRecommended && filtered.length === 0 && query.trim() && (
                 <div className="item-no-results">No items found</div>
               )}
-              {filtered.length > 0 && (
-                <>
-                  {showRecommended && <div className="item-section-label">Search Results</div>}
-                  {filtered.map(renderItemRow)}
-                </>
-              )}
+              {filtered.length > 0 && filtered.map(renderItemRow)}
             </div>
           </div>
         </div>
