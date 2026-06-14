@@ -82,7 +82,7 @@ export default function App() {
   return (
     <>
       <header className="app-header">
-        <h1>LoL Damage Calc</h1>
+        <h1>Boris Diff</h1>
         <span className="patch">Patch {meta.version}</span>
       </header>
 

@@ -70,6 +70,10 @@ function normalizeFormulaPart(p) {
       return { kind: 'statByCoefficient', coefficient: p.mCoefficient, stat: resolveStatName(p.mStat, p.mStatFormula) };
     case 'ByCharLevelFormulaCalculationPart':
       return { kind: 'byCharLevel', values: p.values };
+    case 'ByCharLevelBreakpointsCalculationPart':
+      return { kind: 'byCharLevelBreakpoints', baseValue: p.mLevel1Value, initialPerLevel: p.mInitialBonusPerLevel, breakpoints: p.mBreakpoints };
+    case 'ByCharLevelInterpolationCalculationPart':
+      return { kind: 'byCharLevelInterp', start: p.mStartValue, end: p.mEndValue };
     case 'NumberCalculationPart':
       return { kind: 'number', value: p.mNumber };
     default:
@@ -137,15 +141,15 @@ function normalizeChampion(meta) {
   // Look for explicit "Passive" path, or hash-keyed entries with mSpell that
   // aren't referenced by spellNames (Q/W/E/R)
   const spellScriptNames = new Set(spellPaths.map((p) => p.split('/').pop()));
+  const hasSpellData = (v) => v?.mSpell?.DataValues || v?.mSpell?.mSpellCalculations;
   let passiveEntry = Object.entries(bin).find(([k, v]) =>
-    (/Passive/i.test(k) || /Passive/i.test(v?.mScriptName || '')) && v?.mSpell?.DataValues
+    (/Passive/i.test(k) || /Passive/i.test(v?.mScriptName || '')) && hasSpellData(v)
   );
   if (!passiveEntry) {
     passiveEntry = Object.entries(bin).find(([k, v]) => {
       if (k.includes('CharacterRecords')) return false;
       if (k.includes('BasicAttack') || k.includes('CritAttack')) return false;
-      if (!v?.mSpell?.DataValues) return false;
-      // Not one of the Q/W/E/R spells
+      if (!hasSpellData(v)) return false;
       const scriptName = v.mScriptName || k.split('/').pop();
       return !spellScriptNames.has(scriptName) && !spellPaths.some((p) => k.includes(p));
     });
