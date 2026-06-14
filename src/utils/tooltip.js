@@ -146,6 +146,10 @@ function evaluateSubPart(part, dataValues, rank, charLevel) {
       const arr = dataValues?.[part.name];
       return arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
     }
+    case 'byCharLevel': {
+      const vidx = Math.max(0, Math.min(lvl - 1, (part.values?.length || 1) - 1));
+      return part.values?.[vidx] ?? 0;
+    }
     case 'byCharLevelBreakpoints': {
       let val = part.baseValue || 0;
       if (part.initialPerLevel) val += part.initialPerLevel * (lvl - 1);
@@ -212,6 +216,13 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
           pct: part.coefficient,
           label: statLabel,
         });
+        break;
+      }
+      case 'byCharLevel': {
+        const lvl = charLevel || 1;
+        const vidx = Math.max(0, Math.min(lvl - 1, (part.values?.length || 1) - 1));
+        const val = part.values?.[vidx] ?? 0;
+        if (val !== 0) segments.push({ flat: val, pct: null, label: null });
         break;
       }
       case 'byCharLevelInterp': {
@@ -287,6 +298,7 @@ export function formatDamageTooltip(ability, rank, attacker, charLevel) {
   const lines = [];
   for (const [name, calc] of Object.entries(calcs)) {
     if (/cooldown|duration|speed|move|heal|shield|range|radius|size|cost|mana/i.test(name)) continue;
+    if (name.startsWith('{')) continue;
     const desc = describeCalcParts(calc, dv, rank, attacker, charLevel);
     if (!desc) continue;
     const label = humanizeCalcName(name);
