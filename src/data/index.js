@@ -74,6 +74,8 @@ function normalizeFormulaPart(p) {
       return { kind: 'byCharLevelBreakpoints', baseValue: p.mLevel1Value, initialPerLevel: p.mInitialBonusPerLevel, breakpoints: p.mBreakpoints };
     case 'ByCharLevelInterpolationCalculationPart':
       return { kind: 'byCharLevelInterp', start: p.mStartValue, end: p.mEndValue };
+    case 'StatBySubPartCalculationPart':
+      return { kind: 'statBySubPart', stat: resolveStatName(p.mStat, p.mStatFormula), subPart: normalizeFormulaPart(p.mSubpart) };
     case 'NumberCalculationPart':
       return { kind: 'number', value: p.mNumber };
     default:

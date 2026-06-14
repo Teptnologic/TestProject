@@ -215,6 +215,11 @@ function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
         total += (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
         break;
       }
+      case 'statBySubPart': {
+        const coeff = evaluateItemCalc({ parts: [part.subPart] }, dataValues, attacker, charLevel);
+        total += statValue(attacker, part.stat) * coeff;
+        break;
+      }
       case 'number':
         total += part.value || 0;
         break;
@@ -381,6 +386,11 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
       case 'byCharLevelInterp': {
         const t = Math.max(0, Math.min(1, (charLevel - 1) / 17));
         total += (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
+        break;
+      }
+      case 'statBySubPart': {
+        const coeff = evaluateCalc({ parts: [part.subPart] }, rank, attacker, charLevel);
+        total += statValue(attacker, part.stat) * coeff;
         break;
       }
       case 'number': total += part.value || 0; break;
