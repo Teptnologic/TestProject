@@ -137,6 +137,44 @@ export function formatItemTooltip(item) {
   return lolHtmlToSafeHtml(item.description || item.name || '');
 }
 
+function evaluateSubPart(part, dataValues, rank, charLevel) {
+  if (!part) return 0;
+  const idx = dataValueIndex(rank);
+  const lvl = charLevel || 1;
+  switch (part.kind) {
+    case 'dataValue': {
+      const arr = dataValues?.[part.name];
+      return arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
+    }
+    case 'byCharLevel': {
+      const vidx = Math.max(0, Math.min(lvl - 1, (part.values?.length || 1) - 1));
+      return part.values?.[vidx] ?? 0;
+    }
+    case 'byCharLevelBreakpoints': {
+      let val = part.baseValue || 0;
+      if (part.initialPerLevel) val += part.initialPerLevel * (lvl - 1);
+      if (part.breakpoints) {
+        for (const bp of part.breakpoints) {
+          if (lvl >= (bp.mLevel || 1)) {
+            const perLevel = bp['{57fdc438}'] || bp.mPerLevel || bp.mBonusPerLevelAtAndAfter || 0;
+            val += perLevel * (lvl - (bp.mLevel || 1));
+            if (bp.mAdditionalBonusAtThisLevel) val += bp.mAdditionalBonusAtThisLevel;
+          }
+        }
+      }
+      return val;
+    }
+    case 'byCharLevelInterp': {
+      const t = Math.max(0, Math.min(1, (lvl - 1) / 17));
+      return (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
+    }
+    case 'number':
+      return part.value || 0;
+    default:
+      return 0;
+  }
+}
+
 function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
   if (!calc?.parts?.length) return null;
   const idx = dataValueIndex(rank);
@@ -180,6 +218,13 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
         });
         break;
       }
+      case 'byCharLevel': {
+        const lvl = charLevel || 1;
+        const vidx = Math.max(0, Math.min(lvl - 1, (part.values?.length || 1) - 1));
+        const val = part.values?.[vidx] ?? 0;
+        if (val !== 0) segments.push({ flat: val, pct: null, label: null });
+        break;
+      }
       case 'byCharLevelInterp': {
         const t = Math.max(0, Math.min(1, ((charLevel || 1) - 1) / 17));
         const val = (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
@@ -188,16 +233,25 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
       }
       case 'byCharLevelBreakpoints': {
         let val = part.baseValue || 0;
+        const lvl = charLevel || 1;
+        if (part.initialPerLevel) val += part.initialPerLevel * (lvl - 1);
         if (part.breakpoints) {
           for (const bp of part.breakpoints) {
-            const lvl = charLevel || 1;
             if (lvl >= (bp.mLevel || 1)) {
-              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || 0;
+              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || bp.mBonusPerLevelAtAndAfter || 0;
               val += perLevel * (lvl - (bp.mLevel || 1));
+              if (bp.mAdditionalBonusAtThisLevel) val += bp.mAdditionalBonusAtThisLevel;
             }
           }
         }
         segments.push({ flat: val, pct: null, label: null });
+        break;
+      }
+      case 'statBySubPart': {
+        const subVal = evaluateSubPart(part.subPart, dataValues, rank, charLevel);
+        if (subVal === 0) continue;
+        const statLabel = STAT_DISPLAY[part.stat] || part.stat;
+        segments.push({ flat: null, pct: subVal, label: statLabel });
         break;
       }
       case 'number': {
@@ -244,6 +298,7 @@ export function formatDamageTooltip(ability, rank, attacker, charLevel) {
   const lines = [];
   for (const [name, calc] of Object.entries(calcs)) {
     if (/cooldown|duration|speed|move|heal|shield|range|radius|size|cost|mana/i.test(name)) continue;
+    if (name.startsWith('{')) continue;
     const desc = describeCalcParts(calc, dv, rank, attacker, charLevel);
     if (!desc) continue;
     const label = humanizeCalcName(name);

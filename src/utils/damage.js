@@ -197,11 +197,13 @@ function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
         break;
       case 'byCharLevelBreakpoints': {
         let val = part.baseValue || 0;
+        if (part.initialPerLevel) val += part.initialPerLevel * (charLevel - 1);
         if (part.breakpoints) {
           for (const bp of part.breakpoints) {
             if (charLevel >= (bp.mLevel || 1)) {
               const perLevel = bp['{57fdc438}'] || bp.mPerLevel || bp.mBonusPerLevelAtAndAfter || 0;
               val += perLevel * (charLevel - (bp.mLevel || 1));
+              if (bp.mAdditionalBonusAtThisLevel) val += bp.mAdditionalBonusAtThisLevel;
             }
           }
         }
@@ -211,6 +213,11 @@ function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
       case 'byCharLevelInterp': {
         const t = Math.max(0, Math.min(1, (charLevel - 1) / 17));
         total += (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
+        break;
+      }
+      case 'statBySubPart': {
+        const coeff = evaluateItemCalc({ parts: [part.subPart] }, dataValues, attacker, charLevel);
+        total += statValue(attacker, part.stat) * coeff;
         break;
       }
       case 'number':
@@ -359,6 +366,31 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
       case 'byCharLevel': {
         const idx = Math.max(0, Math.min(charLevel - 1, part.values.length - 1));
         total += part.values[idx];
+        break;
+      }
+      case 'byCharLevelBreakpoints': {
+        let val = part.baseValue || 0;
+        if (part.initialPerLevel) val += part.initialPerLevel * (charLevel - 1);
+        if (part.breakpoints) {
+          for (const bp of part.breakpoints) {
+            if (charLevel >= (bp.mLevel || 1)) {
+              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || bp.mBonusPerLevelAtAndAfter || 0;
+              val += perLevel * (charLevel - (bp.mLevel || 1));
+              if (bp.mAdditionalBonusAtThisLevel) val += bp.mAdditionalBonusAtThisLevel;
+            }
+          }
+        }
+        total += val;
+        break;
+      }
+      case 'byCharLevelInterp': {
+        const t = Math.max(0, Math.min(1, (charLevel - 1) / 17));
+        total += (part.start || 0) + ((part.end || 0) - (part.start || 0)) * t;
+        break;
+      }
+      case 'statBySubPart': {
+        const coeff = evaluateCalc({ parts: [part.subPart] }, rank, attacker, charLevel);
+        total += statValue(attacker, part.stat) * coeff;
         break;
       }
       case 'number': total += part.value || 0; break;

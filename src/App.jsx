@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { getChampion, getItem } from './data';
+import { useState, useMemo, useEffect } from 'react';
+import { getChampion, getItem, championList } from './data';
 import { ITEM_OVERRIDES } from './data/item-overrides';
 import meta from './data/generated/meta.json';
 import { totalStats, computeCombo } from './utils/damage';
@@ -27,6 +27,16 @@ const INITIAL_TARGET = {
   level: 11,
 };
 
+// Map a /c/<slug> URL path to a canonical champion id (case-insensitive).
+function championIdFromPath() {
+  if (typeof window === 'undefined') return null;
+  const m = window.location.pathname.match(/^\/c\/([^/]+)/);
+  if (!m) return null;
+  const slug = decodeURIComponent(m[1]).toLowerCase();
+  const found = championList.find((c) => c.id.toLowerCase() === slug);
+  return found ? found.id : null;
+}
+
 function resolveItems(itemIds) {
   return itemIds.map((id) => {
     if (!id) return null;
@@ -38,10 +48,36 @@ function resolveItems(itemIds) {
 }
 
 export default function App() {
-  const [builds, setBuilds] = useState([{ ...INITIAL_BUILD }]);
+  const [builds, setBuilds] = useState([{ ...INITIAL_BUILD, championId: championIdFromPath() }]);
   const [activeBuildIdx, setActiveBuildIdx] = useState(0);
   const [combo, setCombo] = useState([]);
   const [target, setTarget] = useState(INITIAL_TARGET);
+
+  // Build A's champion is the canonical "page" — keep the URL and tab title in sync
+  // so each champion has its own shareable link (e.g. /c/Katarina).
+  const buildAChampId = builds[0]?.championId || null;
+  useEffect(() => {
+    const path = buildAChampId ? `/c/${buildAChampId}` : '/';
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    const champ = buildAChampId ? getChampion(buildAChampId) : null;
+    document.title = champ ? `${champ.name} Build & Damage Calculator – Boris Diff` : 'Boris Diff';
+  }, [buildAChampId]);
+
+  // Sync Build A when the user navigates back/forward.
+  useEffect(() => {
+    function onPop() {
+      const id = championIdFromPath();
+      setBuilds((prev) => {
+        const next = [...prev];
+        next[0] = { ...next[0], championId: id };
+        return next;
+      });
+    }
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const resolvedBuilds = useMemo(() => builds.map((build) => {
     const champion = build.championId ? getChampion(build.championId) : null;
@@ -82,7 +118,7 @@ export default function App() {
   return (
     <>
       <header className="app-header">
-        <h1>LoL Damage Calc</h1>
+        <h1>Boris Diff</h1>
         <span className="patch">Patch {meta.version}</span>
       </header>
 
