@@ -674,7 +674,284 @@ input { font-family: inherit; }
 .game-tooltip-body .lol-scale { color: #9aa4af; }
 .game-tooltip-body .lol-stats { color: #f0e6d2; margin-bottom: 4px; }
 
+/* --- Build tabs --- */
+.build-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 20px 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.build-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #13171f;
+  border: 1px solid #2a2f3a;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  color: #8b92a0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  position: relative;
+  top: 1px;
+}
+
+.build-tab.active {
+  background: #1a1f2e;
+  border-color: #c89b3c;
+  border-bottom: 1px solid #1a1f2e;
+  color: #c89b3c;
+}
+
+.build-tab.add {
+  background: transparent;
+  border: 1px dashed #2a2f3a;
+  color: #5a6270;
+}
+
+.build-tab.add:hover { border-color: #c89b3c; color: #c89b3c; }
+
+.build-tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2a2f3a;
+}
+
+.build-tab-dot.has-champ { background: #27ae60; }
+
+.build-tab-champ {
+  font-size: 11px;
+  color: #5a6270;
+  font-weight: 400;
+}
+
+.build-tab-close {
+  margin-left: 4px;
+  font-size: 14px;
+  color: #5a6270;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.build-tab-close:hover { color: #e74c3c; background: rgba(231,76,60,0.15); }
+
+/* --- Target presets --- */
+.target-presets {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.target-preset-btn {
+  padding: 5px 12px;
+  background: #1e2330;
+  border: 1px solid #2a2f3a;
+  border-radius: 4px;
+  color: #8b92a0;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.target-preset-btn:hover { border-color: #c89b3c; color: #c89b3c; }
+
+/* --- Target advanced --- */
+.advanced-toggle {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  margin-top: 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid #2a2f3a;
+  color: #5a6270;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.advanced-toggle:hover { color: #c89b3c; }
+
+.target-advanced {
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.target-champ-picker {
+  position: relative;
+}
+
+.target-champ-search-wrapper {
+  position: relative;
+}
+
+.target-champ-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #1a1f2e;
+  border-radius: 6px;
+}
+
+.target-champ-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 2px solid #c89b3c;
+  object-fit: cover;
+}
+
+.target-champ-info { flex: 1; }
+.target-champ-name { font-size: 13px; font-weight: 600; color: #c8cdd3; display: block; margin-bottom: 4px; }
+
+.target-level-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.target-level-control label {
+  font-size: 11px;
+  color: #8b92a0;
+}
+
+.target-champ-clear {
+  background: none;
+  border: none;
+  color: #5a6270;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.target-champ-clear:hover { color: #e74c3c; }
+
+/* --- Item search sections --- */
+.item-section-label {
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #c89b3c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  background: #1a1f2e;
+  border-bottom: 1px solid #2a2f3a;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.item-no-results {
+  padding: 20px;
+  text-align: center;
+  color: #5a6270;
+  font-size: 13px;
+}
+
+/* --- Damage comparison --- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: start;
+}
+
+.compare-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c89b3c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.compare-delta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  min-height: 100px;
+}
+
+.delta-label {
+  font-size: 10px;
+  color: #5a6270;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.delta-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #8b92a0;
+}
+
+.delta-value.positive { color: #27ae60; }
+.delta-value.negative { color: #e74c3c; }
+
+.delta-sub {
+  font-size: 11px;
+  color: #5a6270;
+  margin-top: 4px;
+}
+
+.damage-summary.compact {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.damage-summary.compact .damage-card { padding: 10px; }
+.damage-summary.compact .damage-value { font-size: 20px; }
+.damage-summary.compact .damage-card.main .damage-value { font-size: 22px; }
+
+.compare-breakdown .diff-positive { color: #27ae60; }
+.compare-breakdown .diff-negative { color: #e74c3c; }
+.compare-breakdown .total-row td { border-top: 2px solid #2a2f3a; }
+
+.compare-hp-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.compare-hp-bar {
+  background: #1a1f2e;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.compare-hp-label {
+  font-size: 11px;
+  color: #8b92a0;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.hp-bar-mini .hp-bar { height: 22px; }
+
 @media (max-width: 900px) {
   .main-grid { grid-template-columns: 1fr; }
   .damage-summary { grid-template-columns: repeat(2, 1fr); }
+  .compare-grid { grid-template-columns: 1fr; }
+  .compare-hp-bars { grid-template-columns: 1fr; }
 }

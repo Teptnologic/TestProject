@@ -2,11 +2,31 @@
 
 import { totalStats, baseStatsAtLevel } from './stats.js';
 
-// Compute auto-attack damage (physical = total AD)
-function computeAADamage(attacker, items) {
+// Compute auto-attack damage (physical = total AD), with crit expected value and on-hits
+function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP) {
+  // Crit expected value
+  const critChance = Math.min(1, attacker.crit || 0);
+  let critDamageMultiplier = 1.75;
+  if (critChance > 0) {
+    for (const item of items || []) {
+      const ov = item?._overrides;
+      if (ov?.passive?.type === 'infinityEdge' && critChance >= (ov.passive.critThreshold || 0.40)) {
+        critDamageMultiplier += ov.passive.critDamageBonus || 0.35;
+        break;
+      }
+    }
+  }
+  const expectedCritMult = critChance > 0 ? 1 + critChance * (critDamageMultiplier - 1) : 1;
+  const baseDmg = attacker.attackdamage * expectedCritMult;
+
+  const aaLabel = critChance > 0
+    ? `Auto Attack (${Math.round(critChance * 100)}% crit)`
+    : 'Auto Attack';
+
   const results = [
-    { abilityKey: 'AA', abilityName: 'Auto Attack', raw: attacker.attackdamage, type: 'physical' },
+    { abilityKey: 'AA', abilityName: aaLabel, raw: baseDmg, type: 'physical' },
   ];
+
   // On-hit item effects
   for (const item of items || []) {
     const ov = item?._overrides;
@@ -35,18 +55,51 @@ function computeAADamage(attacker, items) {
         break;
       }
       case 'botrk': {
-        const currentHP = attacker._targetCurrentHP || attacker._targetMaxHP || 2000;
+        const hp = targetCurrentHP || 2000;
         results.push({
           abilityKey: 'AA',
-          abilityName: 'BotRK On-Hit',
-          raw: currentHP * (p.currentHpRatioMelee || 0.09),
+          abilityName: `BotRK On-Hit (${Math.round(hp)} HP)`,
+          raw: hp * (p.currentHpRatioMelee || 0.09),
           type: 'physical',
         });
+        break;
+      }
+      case 'kraken': {
+        const bin = item?.bin;
+        const procEvery = bin?.dataValues?.AttackCount || 3;
+        if ((aaIndex + 1) % procEvery === 0) {
+          let raw = 0;
+          if (bin?.calculations?.DamageAmount) {
+            raw = evaluateItemCalc(bin.calculations.DamageAmount, bin.dataValues || {}, attacker, attacker.level || 1);
+          }
+          // Missing health scaling: damage * (1 + (MaxAmpNumber - 1) * missingHealthPct)
+          const maxAmp = bin?.dataValues?.MaxAmpNumber || 1;
+          if (maxAmp > 1 && targetMaxHP > 0) {
+            const missingPct = Math.max(0, 1 - (targetCurrentHP || targetMaxHP) / targetMaxHP);
+            raw *= 1 + (maxAmp - 1) * missingPct;
+          }
+          results.push({
+            abilityKey: 'AA',
+            abilityName: `Kraken Slayer (${aaIndex + 1}${ordSuffix(aaIndex + 1)} hit)`,
+            raw,
+            type: p.damageType || 'physical',
+          });
+        }
         break;
       }
     }
   }
   return results;
+}
+
+function ordSuffix(n) {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  switch (n % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
 }
 
 // Compute spellblade proc (Sheen/Lich Bane/Trinity/Essence Reaver/Dusk and Dawn)
@@ -77,6 +130,54 @@ function computeSpellbladeDamage(attacker, items) {
   return best;
 }
 
+// Compute item active damage (Rocketbelt, Gunblade, etc.)
+function computeItemActiveDamage(itemId, attacker, items) {
+  for (const item of items || []) {
+    if (item?.id !== itemId) continue;
+    const active = item?._overrides?.active;
+    if (!active) {
+      const bin = item?.bin;
+      if (bin?.calculations) {
+        const found = pickItemDamageCalc(bin.calculations);
+        if (found) {
+          const raw = evaluateItemCalc(found.calc, bin.dataValues || {}, attacker, attacker.level || 1);
+          if (raw > 0) return { abilityKey: 'ITEM', abilityName: item.name, raw, type: 'magic' };
+        }
+      }
+      return null;
+    }
+    let raw = 0;
+    if (active.flatDamage != null) {
+      raw += active.flatDamage;
+    } else if (active.flatDamageMin != null && active.flatDamageMax != null) {
+      const t = ((attacker.level || 1) - 1) / 17;
+      raw += active.flatDamageMin + (active.flatDamageMax - active.flatDamageMin) * t;
+    }
+    if (active.apRatio) raw += (attacker.ap || 0) * active.apRatio;
+    if (active.adRatio) raw += (attacker.attackdamage || 0) * active.adRatio;
+    if (active.bonusAdRatio) raw += (attacker.bonusAD || 0) * active.bonusAdRatio;
+    return {
+      abilityKey: 'ITEM',
+      abilityName: active.name || item.name,
+      raw,
+      type: active.damageType || 'magic',
+    };
+  }
+  return null;
+}
+
+// Get list of equipped items that have actives (for UI)
+export function getEquippedActives(items) {
+  const actives = [];
+  for (const item of items || []) {
+    if (!item) continue;
+    if (item._overrides?.active) {
+      actives.push({ id: item.id, name: item._overrides.active.name || item.name, itemName: item.name });
+    }
+  }
+  return actives;
+}
+
 // Evaluate an item calculation using bin data (same as champion evaluateCalc but
 // item dataValues are single numbers, not per-rank arrays)
 function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
@@ -99,7 +200,7 @@ function evaluateItemCalc(calc, dataValues, attacker, charLevel) {
         if (part.breakpoints) {
           for (const bp of part.breakpoints) {
             if (charLevel >= (bp.mLevel || 1)) {
-              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || 0;
+              const perLevel = bp['{57fdc438}'] || bp.mPerLevel || bp.mBonusPerLevelAtAndAfter || 0;
               val += perLevel * (charLevel - (bp.mLevel || 1));
             }
           }
@@ -188,8 +289,6 @@ function computeItemProcs(attacker, items, target, abilityKey) {
     if (bin.calculations) {
       const found = pickItemDamageCalc(bin.calculations);
       if (!found) continue;
-      // Skip items that only have SpellbladeDamage (handled in AA path)
-      if (!found) continue;
 
       let raw = evaluateItemCalc(found.calc, dv, attacker, attacker.level || 1);
 
@@ -215,9 +314,6 @@ function computeItemProcs(attacker, items, target, abilityKey) {
 // Pick the most relevant "damage" calculation from a spell's calculations map.
 function pickDamageCalc(calculations) {
   if (!calculations) return null;
-  const keys = Object.keys(calculations);
-  // Prefer "TotalDamage", "TotalDamageTT", "Damage" — fall back to any calc whose
-  // formula references BaseDamage/Damage data values
   const preferred = ['TotalDamage', 'TotalDamageTT', 'Damage', 'DamageTT'];
   for (const p of preferred) if (calculations[p]) return { name: p, calc: calculations[p] };
   for (const [name, calc] of Object.entries(calculations)) {
@@ -274,8 +370,6 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
 }
 
 // Compute raw damage for one ability cast
-// rank is 1-based (1..maxrank). We map to the DataValues array which is 0-indexed
-// but includes a rank-0 entry, so DataValues[rank] gives us the rank-1..5 values.
 export function computeAbilityDamage(ability, rank, attacker, charLevel) {
   if (!ability) return null;
   const { calc, name: calcName } = pickDamageCalc(ability.calculations) || {};
@@ -297,7 +391,6 @@ function detectDamageType(ability) {
   if (/physicalDamage/i.test(desc)) return 'physical';
   if (/trueDamage/i.test(desc)) return 'true';
   if (/magicDamage/i.test(desc)) return 'magic';
-  // Fall back to inspecting the calculation
   const calc = pickDamageCalc(ability.calculations)?.calc;
   if (calc) {
     for (const p of calc.parts) {
@@ -325,6 +418,9 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let totalPhys = 0, totalMagic = 0, totalTrue = 0;
   let lastWasSpell = false;
   let itemProcsUsed = false;
+  let aaCount = 0;
+  const targetMaxHP = (target.hp || 0) + (target.shield || 0);
+  let targetCurrentHP = targetMaxHP;
 
   function addDmg(result) {
     const post = applyResistance(result.raw, result.type, target, attackerStats);
@@ -332,17 +428,28 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     else if (result.type === 'true') totalTrue += post;
     else totalMagic += post;
     steps.push({ ...result, post });
+    targetCurrentHP = Math.max(0, targetCurrentHP - post);
   }
 
   for (const step of combo) {
     if (step === 'AA') {
-      const aaResults = computeAADamage(attackerStats, items);
+      const aaResults = computeAADamage(attackerStats, items, aaCount, targetCurrentHP, targetMaxHP);
+      aaCount++;
       for (const r of aaResults) addDmg(r);
       if (lastWasSpell) {
         const sb = computeSpellbladeDamage(attackerStats, items);
         if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
       }
       lastWasSpell = false;
+      continue;
+    }
+
+    // Item active steps (e.g., "ITEM_3152" for Rocketbelt)
+    if (step.startsWith('ITEM_')) {
+      const itemId = parseInt(step.slice(5));
+      const result = computeItemActiveDamage(itemId, attackerStats, items);
+      if (result) addDmg(result);
+      lastWasSpell = true;
       continue;
     }
 
