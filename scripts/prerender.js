@@ -74,3 +74,29 @@ for (const champ of champions) {
 }
 
 console.log(`[prerender] wrote ${count} champion pages to dist/c/<id>/index.html`);
+
+// sitemap.xml — homepage + every champion page, for search-engine indexing.
+const today = new Date().toISOString().slice(0, 10);
+const urls = [
+  { loc: `${ORIGIN}/`, priority: '1.0' },
+  ...champions.map((c) => ({ loc: `${ORIGIN}/c/${c.id}`, priority: '0.8' })),
+];
+const sitemap =
+  `<?xml version="1.0" encoding="UTF-8"?>\n` +
+  `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+  urls
+    .map(
+      (u) =>
+        `  <url><loc>${u.loc}</loc><lastmod>${today}</lastmod><priority>${u.priority}</priority></url>`,
+    )
+    .join('\n') +
+  `\n</urlset>\n`;
+writeFileSync(resolve(distDir, 'sitemap.xml'), sitemap);
+
+// robots.txt — allow everything, point crawlers at the sitemap.
+writeFileSync(
+  resolve(distDir, 'robots.txt'),
+  `User-agent: *\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml\n`,
+);
+
+console.log(`[prerender] wrote sitemap.xml (${urls.length} urls) and robots.txt`);

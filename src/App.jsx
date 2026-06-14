@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
-import { getChampion, getItem, championList } from './data';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { getChampion, getItem } from './data';
 import { ITEM_OVERRIDES } from './data/item-overrides';
 import meta from './data/generated/meta.json';
 import { totalStats, computeCombo } from './utils/damage';
+import { encodeShareUrl, decodeShareUrl } from './utils/shareState';
 
 import ChampionPanel from './components/ChampionPanel';
 import TargetPanel from './components/TargetPanel';
@@ -27,14 +28,18 @@ const INITIAL_TARGET = {
   level: 11,
 };
 
-// Map a /c/<slug> URL path to a canonical champion id (case-insensitive).
-function championIdFromPath() {
-  if (typeof window === 'undefined') return null;
-  const m = window.location.pathname.match(/^\/c\/([^/]+)/);
-  if (!m) return null;
-  const slug = decodeURIComponent(m[1]).toLowerCase();
-  const found = championList.find((c) => c.id.toLowerCase() === slug);
-  return found ? found.id : null;
+// Read the full shareable state (builds + combo + target) from the current URL,
+// merged onto the defaults.
+function stateFromUrl() {
+  const decoded =
+    typeof window === 'undefined'
+      ? { builds: [{}], combo: null, target: null }
+      : decodeShareUrl(window.location.pathname, window.location.search);
+  return {
+    builds: decoded.builds.map((b) => ({ ...INITIAL_BUILD, ...b })),
+    combo: decoded.combo || [],
+    target: { ...INITIAL_TARGET, ...(decoded.target || {}) },
+  };
 }
 
 function resolveItems(itemIds) {
@@ -48,36 +53,53 @@ function resolveItems(itemIds) {
 }
 
 export default function App() {
-  const [builds, setBuilds] = useState([{ ...INITIAL_BUILD, championId: championIdFromPath() }]);
+  const [initial] = useState(stateFromUrl);
+  const [builds, setBuilds] = useState(initial.builds);
   const [activeBuildIdx, setActiveBuildIdx] = useState(0);
-  const [combo, setCombo] = useState([]);
-  const [target, setTarget] = useState(INITIAL_TARGET);
+  const [combo, setCombo] = useState(initial.combo);
+  const [target, setTarget] = useState(initial.target);
+  const [copied, setCopied] = useState(false);
 
-  // Build A's champion is the canonical "page" — keep the URL and tab title in sync
-  // so each champion has its own shareable link (e.g. /c/Katarina).
+  // The whole shareable state is reflected in the URL: a champion change is a new
+  // history entry (so Back works between champions); finer edits (level, items,
+  // combo, target) replace the current entry to avoid flooding history.
+  const shareUrl = useMemo(() => encodeShareUrl(builds, combo, target), [builds, combo, target]);
   const buildAChampId = builds[0]?.championId || null;
+  const prevChamp = useRef(buildAChampId);
   useEffect(() => {
-    const path = buildAChampId ? `/c/${buildAChampId}` : '/';
-    if (window.location.pathname !== path) {
-      window.history.pushState({}, '', path);
+    const current = window.location.pathname + window.location.search;
+    if (current !== shareUrl) {
+      if (prevChamp.current !== buildAChampId) {
+        window.history.pushState({}, '', shareUrl);
+      } else {
+        window.history.replaceState({}, '', shareUrl);
+      }
     }
+    prevChamp.current = buildAChampId;
     const champ = buildAChampId ? getChampion(buildAChampId) : null;
     document.title = champ ? `${champ.name} Build & Damage Calculator – Boris Diff` : 'Boris Diff';
-  }, [buildAChampId]);
+  }, [shareUrl, buildAChampId]);
 
-  // Sync Build A when the user navigates back/forward.
+  // Re-read the full state when the user navigates back/forward.
   useEffect(() => {
     function onPop() {
-      const id = championIdFromPath();
-      setBuilds((prev) => {
-        const next = [...prev];
-        next[0] = { ...next[0], championId: id };
-        return next;
-      });
+      const s = stateFromUrl();
+      setBuilds(s.builds);
+      setCombo(s.combo);
+      setTarget(s.target);
+      setActiveBuildIdx((i) => Math.min(i, s.builds.length - 1));
     }
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  function copyShareLink() {
+    const url = window.location.origin + shareUrl;
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   const resolvedBuilds = useMemo(() => builds.map((build) => {
     const champion = build.championId ? getChampion(build.championId) : null;
@@ -120,6 +142,9 @@ export default function App() {
       <header className="app-header">
         <h1>Boris Diff</h1>
         <span className="patch">Patch {meta.version}</span>
+        <button className="share-btn" onClick={copyShareLink} title="Copy a link to this exact build & combo">
+          {copied ? '✓ Link copied' : '🔗 Share build'}
+        </button>
       </header>
 
       <div className="build-tabs">
