@@ -15,7 +15,7 @@ import './App.css';
 const INITIAL_BUILD = {
   championId: null,
   level: 11,
-  ranks: { P: 1, Q: 5, W: 1, E: 3, R: 2 },
+  ranks: { P: 1, Q: 0, W: 0, E: 0, R: 0 },
   items: [null, null, null, null, null, null],
 };
 
