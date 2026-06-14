@@ -1,16 +1,16 @@
 export const COMBO_TEMPLATES = {
   Akali: [
-    { name: 'Short Trade', keys: ['Q', 'AA', 'W'] },
-    { name: 'All-In', keys: ['R', 'E', 'Q', 'AA', 'E', 'R', 'Q'] },
-    { name: 'E Engage', keys: ['E', 'Q', 'AA', 'E', 'R', 'Q', 'R'] },
-    { name: 'Burst', keys: ['R', 'Q', 'AA', 'R'] },
+    { name: 'Short Trade', keys: ['Q', 'P', 'AA', 'W'] },
+    { name: 'All-In', keys: ['R', 'P', 'E', 'Q', 'P', 'AA', 'E', 'R', 'Q', 'P'] },
+    { name: 'E Engage', keys: ['E', 'Q', 'P', 'AA', 'E', 'R', 'Q', 'P', 'R'] },
+    { name: 'Burst', keys: ['R', 'P', 'Q', 'P', 'AA', 'R'] },
     { name: 'Poke', keys: ['Q', 'P', 'AA'] },
   ],
   Lux: [
-    { name: 'Full Combo', keys: ['Q', 'E', 'R', 'AA'] },
-    { name: 'Poke', keys: ['E', 'AA'] },
-    { name: 'Snare Burst', keys: ['Q', 'AA', 'E', 'AA'] },
-    { name: 'One-Shot', keys: ['Q', 'E', 'R'] },
+    { name: 'Full Combo', keys: ['Q', 'AA', 'P', 'E', 'R', 'AA', 'P'] },
+    { name: 'Poke', keys: ['E', 'AA', 'P'] },
+    { name: 'Snare Burst', keys: ['Q', 'AA', 'P', 'E', 'AA', 'P'] },
+    { name: 'One-Shot', keys: ['Q', 'E', 'R', 'AA', 'P'] },
   ],
   Ahri: [
     { name: 'Full Combo', keys: ['E', 'W', 'Q', 'R', 'AA'] },
@@ -27,10 +27,10 @@ export const COMBO_TEMPLATES = {
     { name: 'Quick Trade', keys: ['E', 'Q', 'AA', 'W'] },
   ],
   Katarina: [
-    { name: 'Full Combo', keys: ['E', 'W', 'Q', 'R'] },
-    { name: 'Dagger Burst', keys: ['Q', 'E', 'W', 'AA', 'E'] },
-    { name: 'Quick Trade', keys: ['Q', 'E', 'AA'] },
-    { name: 'All-In', keys: ['E', 'W', 'Q', 'E', 'R'] },
+    { name: 'Full Combo', keys: ['E', 'W', 'P', 'Q', 'E', 'P', 'R'] },
+    { name: 'Dagger Burst', keys: ['Q', 'E', 'P', 'W', 'P', 'AA', 'E'] },
+    { name: 'Quick Trade', keys: ['Q', 'E', 'P', 'AA'] },
+    { name: 'All-In', keys: ['E', 'W', 'P', 'Q', 'E', 'P', 'R'] },
     { name: 'Poke', keys: ['Q'] },
   ],
   Vayne: [
