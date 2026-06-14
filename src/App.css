@@ -16,7 +16,7 @@ input { font-family: inherit; }
   padding: 12px 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
 }
 
 .app-header h1 {
@@ -27,6 +27,21 @@ input { font-family: inherit; }
 }
 
 .app-header .patch { font-size: 12px; color: #5a6270; }
+
+.share-btn {
+  margin-left: auto;
+  background: #1e2630;
+  color: #c89b3c;
+  border: 1px solid #c89b3c;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.share-btn:hover { background: #c89b3c; color: #0d1117; }
 
 .main-grid {
   display: grid;
