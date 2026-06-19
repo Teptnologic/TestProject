@@ -398,7 +398,12 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
       default: break;
     }
   }
-  if (calc.multiplier !== undefined) total *= calc.multiplier;
+  if (calc.multiplier !== undefined) {
+    total *= calc.multiplier;
+  } else if (calc.multiplierPart) {
+    const multVal = evaluateCalc({ parts: [calc.multiplierPart] }, rank, attacker, charLevel);
+    total *= multVal;
+  }
   return total;
 }
 

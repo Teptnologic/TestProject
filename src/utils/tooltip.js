@@ -263,6 +263,20 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
 
   if (!segments.length) return null;
 
+  // Apply multiplier (e.g., Akali E1=30%, E2=70% of total damage)
+  let mult = null;
+  if (calc.multiplier != null) {
+    mult = calc.multiplier;
+  } else if (calc.multiplierPart) {
+    mult = evaluateSubPart(calc.multiplierPart, dataValues, rank, charLevel);
+  }
+  if (mult != null && mult !== 1) {
+    for (const s of segments) {
+      if (s.flat != null) s.flat *= mult;
+      if (s.pct != null) s.pct *= mult;
+    }
+  }
+
   const pieces = [];
   for (const s of segments) {
     if (s.flat != null) {

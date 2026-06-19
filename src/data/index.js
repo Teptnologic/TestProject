@@ -51,9 +51,11 @@ function normalizeCalculations(rawCalc) {
   const out = {};
   for (const [name, calc] of Object.entries(rawCalc)) {
     if (!calc || !Array.isArray(calc.mFormulaParts)) continue;
+    const mult = calc.mMultiplier;
     out[name] = {
       parts: calc.mFormulaParts.map(normalizeFormulaPart).filter(Boolean),
-      multiplier: calc.mMultiplier?.mNumber,
+      multiplier: mult?.mNumber,
+      multiplierPart: mult && !mult.mNumber ? normalizeFormulaPart(mult) : undefined,
     };
   }
   return out;
