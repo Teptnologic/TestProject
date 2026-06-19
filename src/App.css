@@ -186,7 +186,10 @@ input { font-family: inherit; }
   position: relative;
 }
 
-.ability-icon:hover { border-color: #c89b3c; }
+.ability-icon:hover:not(.disabled) { border-color: #c89b3c; }
+.ability-icon.disabled { opacity: 0.35; cursor: not-allowed; }
+.ability-icon.disabled img { filter: grayscale(1); }
+.ability-box.locked .ability-label { opacity: 0.35; }
 .ability-icon img { width: 100%; height: 100%; object-fit: cover; }
 
 .ability-icon .key-letter {

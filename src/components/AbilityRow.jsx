@@ -76,24 +76,26 @@ export default function AbilityRow({ build, setBuild, stats, setCombo }) {
             : null;
 
         const casts = champ.id ? getMultiCasts(champ.id, ability.key) : null;
+        const canClick = ability.key === 'P' || rank > 0;
 
         return (
-          <div className="ability-box" key={ability.key}>
+          <div className={`ability-box ${!canClick ? 'locked' : ''}`} key={ability.key}>
             <GameTooltip
               title={ability.name}
               subtitle={costLine ? `${ability.key} · ${costLine}` : ability.key}
               html={tooltipHtml}
             >
               {casts ? (
-                <div className="ability-icon multi-cast">
+                <div className={`ability-icon multi-cast ${!canClick ? 'disabled' : ''}`}>
                   {iconUrl ? <img src={iconUrl} alt={ability.name} /> : null}
                   <div className="cast-buttons">
                     {casts.map((cast) => (
                       <button
                         key={cast.castKey}
                         className="cast-btn"
-                        onClick={(e) => { e.stopPropagation(); addToCombo(cast.castKey); }}
+                        onClick={(e) => { e.stopPropagation(); if (canClick) addToCombo(cast.castKey); }}
                         title={cast.name}
+                        disabled={!canClick}
                       >
                         {cast.label}
                       </button>
@@ -102,8 +104,8 @@ export default function AbilityRow({ build, setBuild, stats, setCombo }) {
                 </div>
               ) : (
                 <div
-                  className="ability-icon"
-                  onClick={() => addToCombo(ability.key)}
+                  className={`ability-icon ${!canClick ? 'disabled' : ''}`}
+                  onClick={() => canClick && addToCombo(ability.key)}
                 >
                   {iconUrl ? <img src={iconUrl} alt={ability.name} /> : <span className="placeholder">{ability.key}</span>}
                   <span className="key-letter">{ability.key}</span>

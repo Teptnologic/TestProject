@@ -27,10 +27,10 @@ export const COMBO_TEMPLATES = {
     { name: 'Quick Trade', keys: ['E', 'Q', 'AA', 'W'] },
   ],
   Katarina: [
-    { name: 'Full Combo', keys: ['E', 'W', 'P', 'Q', 'E', 'P', 'R'] },
+    { name: 'Full Combo', keys: ['E', 'W', 'P', 'Q', 'E', 'P', 'R5'] },
     { name: 'Dagger Burst', keys: ['Q', 'E', 'P', 'W', 'P', 'AA', 'E'] },
     { name: 'Quick Trade', keys: ['Q', 'E', 'P', 'AA'] },
-    { name: 'All-In', keys: ['E', 'W', 'P', 'Q', 'E', 'P', 'R'] },
+    { name: 'All-In (full R)', keys: ['E', 'W', 'P', 'Q', 'E', 'P', 'R5'] },
     { name: 'Poke', keys: ['Q'] },
   ],
   Vayne: [

@@ -147,7 +147,7 @@ function evaluateSubPart(part, dataValues, rank, charLevel) {
       return arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
     }
     case 'byCharLevel': {
-      const vidx = Math.max(0, Math.min(lvl - 1, (part.values?.length || 1) - 1));
+      const vidx = Math.max(0, Math.min(lvl, (part.values?.length || 1) - 1));
       return part.values?.[vidx] ?? 0;
     }
     case 'byCharLevelBreakpoints': {
@@ -220,7 +220,7 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
       }
       case 'byCharLevel': {
         const lvl = charLevel || 1;
-        const vidx = Math.max(0, Math.min(lvl - 1, (part.values?.length || 1) - 1));
+        const vidx = Math.max(0, Math.min(lvl, (part.values?.length || 1) - 1));
         const val = part.values?.[vidx] ?? 0;
         if (val !== 0) segments.push({ flat: val, pct: null, label: null });
         break;

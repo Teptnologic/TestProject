@@ -365,7 +365,7 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
         break;
       }
       case 'byCharLevel': {
-        const idx = Math.max(0, Math.min(charLevel - 1, part.values.length - 1));
+        const idx = Math.max(0, Math.min(charLevel, part.values.length - 1));
         total += part.values[idx];
         break;
       }

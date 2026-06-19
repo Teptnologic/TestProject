@@ -29,6 +29,12 @@ export const MULTI_CAST = {
       { castKey: 'W3', label: 'W×3', name: 'Fox-Fire (all 3 hits)', calcName: 'SingleFireDamage', multiplier: 1.8 },
     ],
   },
+  Katarina: {
+    R: [
+      { castKey: 'R1', label: 'R1', name: 'Death Lotus (per tick)', calcName: 'DamageCalc' },
+      { castKey: 'R5', label: 'R', name: 'Death Lotus (full channel)', calcName: 'DamageCalc', multiplier: 15 },
+    ],
+  },
   Evelynn: {
     Q: [
       { castKey: 'Q1', label: 'Q1', name: 'Hate Spike', calcName: 'MissileDamage' },
