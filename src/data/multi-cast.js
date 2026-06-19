@@ -35,6 +35,12 @@ export const MULTI_CAST = {
       { castKey: 'Q2', label: 'Q2', name: 'Hate Spike (spikes)', calcName: 'TotalBonusDamage' },
     ],
   },
+  Jhin: {
+    R: [
+      { castKey: 'R1', label: 'R', name: 'Curtain Call (1 shot)', calcName: 'DamageCalc' },
+      { castKey: 'R4', label: 'R4', name: 'Curtain Call (4th shot, 2×)', calcName: 'DamageCalc', multiplier: 2 },
+    ],
+  },
 };
 
 // Given a champion id and ability key, return the casts array or null.
