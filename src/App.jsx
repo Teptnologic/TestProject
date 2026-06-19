@@ -105,7 +105,7 @@ export default function App() {
   const resolvedBuilds = useMemo(() => builds.map((build) => {
     const champion = build.championId ? getChampion(build.championId) : null;
     const items = resolveItems(build.items);
-    const stats = champion ? totalStats(champion.stats, build.level, items) : null;
+    const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks) : null;
     return { ...build, champion, items, stats };
   }), [builds]);
 

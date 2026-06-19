@@ -44,7 +44,7 @@ const ITEM_STAT_MAP = {
   FlatHPRegenMod: 'hpregen',
 };
 
-export function totalStats(champStats, level, items) {
+export function totalStats(champStats, level, items, championId, ranks) {
   const base = baseStatsAtLevel(champStats, level);
   const bonus = { hp: 0, mp: 0, armor: 0, spellblock: 0, attackdamage: 0, ap: 0, crit: 0 };
   let asPct = 0;
@@ -93,18 +93,44 @@ export function totalStats(champStats, level, items) {
   let ap = bonus.ap;
   if (hasRabadons) ap = Math.floor(ap * 1.35);
 
+  const finalAS = base.attackspeed * (1 + asPct);
+  const totalCrit = base.crit + bonus.crit;
+  let bonusAD = bonus.attackdamage;
+
+  // Jhin passive: bonus AD from attack speed, crit, and level
+  if (championId === 'Jhin') {
+    // Level scaling: 4% base, +1% per level, then faster at 10 and 12
+    let levelPct = 0.04;
+    const lvl = level || 1;
+    if (lvl > 1) levelPct += 0.01 * (Math.min(lvl, 9) - 1);
+    if (lvl >= 10) levelPct += 0.02 * (Math.min(lvl, 11) - 9);
+    if (lvl >= 12) levelPct += 0.04 * (lvl - 11);
+    // 35% of crit chance + 30% of bonus AS ratio
+    const fromCrit = 0.35 * totalCrit;
+    const fromAS = 0.30 * asPct;
+    const jhinBonusPct = levelPct + fromCrit + fromAS;
+    const jhinBonusAD = (base.attackdamage + bonusAD) * jhinBonusPct;
+    bonusAD += jhinBonusAD;
+  }
+
+  // Vayne R: flat bonus AD when R is ranked
+  if (championId === 'Vayne' && ranks?.R > 0) {
+    const rBonusAD = [0, 20, 35, 50][ranks.R] || 0;
+    bonusAD += rBonusAD;
+  }
+
   return {
     ...base,
     hp: base.hp + bonus.hp,
     mp: base.mp + bonus.mp,
     armor: base.armor + bonus.armor,
     spellblock: base.spellblock + bonus.spellblock,
-    attackdamage: base.attackdamage + bonus.attackdamage,
+    attackdamage: base.attackdamage + bonusAD,
     baseAD: base.attackdamage,
-    bonusAD: bonus.attackdamage,
+    bonusAD,
     ap,
-    crit: base.crit + bonus.crit,
-    attackspeed: base.attackspeed * (1 + asPct),
+    crit: totalCrit,
+    attackspeed: finalAS,
     bonusHP: bonus.hp,
     lethality,
     flatMagicPen,

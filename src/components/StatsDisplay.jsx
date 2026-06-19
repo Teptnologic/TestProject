@@ -1,10 +1,12 @@
-function StatRow({ kind, label, value, bonus }) {
+function StatRow({ kind, label, value, bonus, decimals }) {
+  const fmt = decimals ? Number(value).toFixed(decimals) : Math.round(value);
+  const bonusFmt = decimals ? Number(bonus).toFixed(decimals) : Math.round(bonus);
   return (
     <div className="stat-item">
       <span className={`stat-icon ${kind}`}></span>
       <span className="stat-label">{label}</span>
       <span className="stat-value">
-        {Math.round(value)}{bonus > 0 && <span className="stat-bonus"> (+{Math.round(bonus)})</span>}
+        {fmt}{bonus > 0 && <span className="stat-bonus"> (+{bonusFmt})</span>}
       </span>
     </div>
   );
@@ -20,7 +22,7 @@ export default function StatsDisplay({ stats }) {
       <StatRow kind="ap" label="AP" value={stats.ap || 0} bonus={0} />
       <StatRow kind="armor" label="Armor" value={stats.armor} bonus={0} />
       <StatRow kind="mr" label="MR" value={stats.spellblock} bonus={0} />
-      <StatRow kind="as" label="Atk Speed" value={Math.round(stats.attackspeed * 1000) / 1000} bonus={0} />
+      <StatRow kind="as" label="Atk Speed" value={stats.attackspeed} bonus={0} decimals={3} />
       <StatRow kind="crit" label="Crit %" value={stats.crit} bonus={0} />
       {stats.lethality > 0 && <StatRow kind="ad" label="Lethality" value={stats.lethality} bonus={0} />}
       {stats.flatMagicPen > 0 && <StatRow kind="ap" label="Flat M.Pen" value={stats.flatMagicPen} bonus={0} />}
