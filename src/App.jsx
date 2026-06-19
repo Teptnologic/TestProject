@@ -151,7 +151,10 @@ export default function App() {
   return (
     <>
       <header className="app-header">
-        <h1 className="app-title" onClick={() => selectFromLanding(null)} style={{ cursor: 'pointer' }}>Boris Diff</h1>
+        <h1 className="app-title" onClick={() => selectFromLanding(null)} style={{ cursor: 'pointer' }}>
+          <img src="/favicon-32.png" alt="" className="app-logo" />
+          Boris Diff
+        </h1>
         <span className="patch">Patch {meta.version}</span>
         {!showLanding && (
           <button className="share-btn" onClick={copyShareLink} title="Copy a link to this exact build & combo">

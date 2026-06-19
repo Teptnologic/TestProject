@@ -24,6 +24,16 @@ input { font-family: inherit; }
   color: #c89b3c;
   font-weight: 700;
   letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  image-rendering: pixelated;
 }
 
 .app-header .patch { font-size: 12px; color: #5a6270; }
