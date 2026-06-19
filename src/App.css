@@ -998,9 +998,153 @@ input { font-family: inherit; }
 
 .hp-bar-mini .hp-bar { height: 22px; }
 
+/* Landing page */
+.landing {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.landing-hero {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.landing-hero h2 {
+  font-size: 28px;
+  color: #c89b3c;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.landing-hero p {
+  color: #8b92a0;
+  font-size: 14px;
+}
+
+.landing-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.landing-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  background: #1e2330;
+  border: 1px solid #2a2f3a;
+  border-radius: 6px;
+  color: #c8cdd3;
+  font-size: 14px;
+}
+
+.landing-search:focus {
+  outline: none;
+  border-color: #c89b3c;
+}
+
+.landing-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.landing-tag {
+  padding: 6px 12px;
+  background: #1e2330;
+  border: 1px solid #2a2f3a;
+  border-radius: 16px;
+  color: #8b92a0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.landing-tag:hover { border-color: #c89b3c; color: #c8cdd3; }
+.landing-tag.active { background: #c89b3c; color: #0d1117; border-color: #c89b3c; font-weight: 600; }
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.champ-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #1e2330;
+  border: 2px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 8px 4px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+
+.champ-card:hover:not(.disabled) {
+  border-color: #c89b3c;
+  transform: translateY(-2px);
+}
+
+.champ-card img {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.champ-card-name {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #c8cdd3;
+  text-align: center;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.champ-card.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
+.champ-card.disabled img {
+  filter: grayscale(1);
+}
+
+.champ-card-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8px;
+  background: #2a2f3a;
+  color: #5a6270;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.landing-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 12px;
+  color: #5a6270;
+}
+
 @media (max-width: 900px) {
   .main-grid { grid-template-columns: 1fr; }
   .damage-summary { grid-template-columns: repeat(2, 1fr); }
   .compare-grid { grid-template-columns: 1fr; }
   .compare-hp-bars { grid-template-columns: 1fr; }
+  .landing-grid { grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); }
 }
