@@ -19,13 +19,6 @@ export const COMBO_TEMPLATES = {
     { name: 'All-In', keys: ['R', 'E', 'W3', 'Q1', 'Q2', 'R', 'AA', 'R'] },
     { name: 'Quick Trade', keys: ['E', 'Q1', 'Q2', 'W3', 'AA'] },
   ],
-  Yone: [
-    { name: 'Short Trade', keys: ['Q', 'AA', 'Q', 'AA'] },
-    { name: 'All-In', keys: ['E', 'Q', 'AA', 'Q', 'AA', 'R', 'Q', 'AA'] },
-    { name: 'Knockup Combo', keys: ['Q', 'AA', 'Q', 'AA', 'Q', 'AA'] },
-    { name: 'Ult Engage', keys: ['E', 'R', 'Q', 'AA', 'W', 'Q', 'AA'] },
-    { name: 'Quick Trade', keys: ['E', 'Q', 'AA', 'W'] },
-  ],
   Katarina: [
     { name: 'Full Combo', keys: ['E', 'W', 'P', 'Q', 'E', 'P', 'R5'] },
     { name: 'Dagger Burst', keys: ['Q', 'E', 'P', 'W', 'P', 'AA', 'E'] },
