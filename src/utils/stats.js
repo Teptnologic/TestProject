@@ -99,24 +99,16 @@ export function totalStats(champStats, level, items, championId, ranks) {
 
   // Jhin passive: bonus AD from attack speed, crit, and level
   if (championId === 'Jhin') {
-    // Level scaling: 4% base, +1% per level, then faster at 10 and 12
     let levelPct = 0.04;
     const lvl = level || 1;
     if (lvl > 1) levelPct += 0.01 * (Math.min(lvl, 9) - 1);
     if (lvl >= 10) levelPct += 0.02 * (Math.min(lvl, 11) - 9);
     if (lvl >= 12) levelPct += 0.04 * (lvl - 11);
-    // 35% of crit chance + 30% of bonus AS ratio
     const fromCrit = 0.35 * totalCrit;
     const fromAS = 0.30 * asPct;
     const jhinBonusPct = levelPct + fromCrit + fromAS;
     const jhinBonusAD = (base.attackdamage + bonusAD) * jhinBonusPct;
     bonusAD += jhinBonusAD;
-  }
-
-  // Vayne R: flat bonus AD when R is ranked
-  if (championId === 'Vayne' && ranks?.R > 0) {
-    const rBonusAD = [0, 20, 35, 50][ranks.R] || 0;
-    bonusAD += rBonusAD;
   }
 
   return {

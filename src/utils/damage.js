@@ -570,7 +570,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let targetCurrentHP = targetMaxHP;
 
   function addDmg(result) {
-    const post = applyResistance(result.raw, result.type, target, attackerStats);
+    const post = applyResistance(result.raw, result.type, target, activeStats);
     if (result.type === 'physical') totalPhys += post;
     else if (result.type === 'true') totalTrue += post;
     else totalMagic += post;
@@ -579,6 +579,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   }
 
   const champId = champion?.id;
+  let activeStats = attackerStats;
 
   for (const step of combo) {
     if (step === 'AA') {
@@ -588,13 +589,13 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         hitCount,
         empowered,
       };
-      const aaResults = computeAADamage(attackerStats, items, aaCount, targetCurrentHP, targetMaxHP, champCtx);
+      const aaResults = computeAADamage(activeStats, items, aaCount, targetCurrentHP, targetMaxHP, champCtx);
       aaCount++;
       hitCount++;
       empowered = null; // consumed
       for (const r of aaResults) addDmg(r);
       if (lastWasSpell) {
-        const sb = computeSpellbladeDamage(attackerStats, items);
+        const sb = computeSpellbladeDamage(activeStats, items);
         if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
       }
       lastWasSpell = false;
@@ -604,7 +605,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     // Item active steps (e.g., "ITEM_3152" for Rocketbelt)
     if (step.startsWith('ITEM_')) {
       const itemId = parseInt(step.slice(5));
-      const result = computeItemActiveDamage(itemId, attackerStats, items);
+      const result = computeItemActiveDamage(itemId, activeStats, items);
       if (result) addDmg(result);
       lastWasSpell = true;
       continue;
@@ -623,7 +624,17 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       cast = casts?.find((c) => c.castKey === step) || null;
       if (cast) targetCalcName = cast.calcName;
     }
-    const result = computeAbilityDamage(ability, rank, attackerStats, charLevel, targetCalcName);
+    // Vayne R: buff AD when R is cast
+    if (champId === 'Vayne' && baseKey === 'R' && ranks.R > 0) {
+      const rBonusAD = [0, 20, 35, 50][ranks.R] || 0;
+      activeStats = {
+        ...activeStats,
+        attackdamage: activeStats.attackdamage + rBonusAD,
+        bonusAD: (activeStats.bonusAD || 0) + rBonusAD,
+      };
+    }
+
+    const result = computeAbilityDamage(ability, rank, activeStats, charLevel, targetCalcName);
     if (result && result.raw) {
       if (cast) {
         result.abilityKey = step;
@@ -645,11 +656,11 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     }
 
     if (!itemProcsUsed) {
-      const procs = computeItemProcs(attackerStats, items, target, baseKey);
+      const procs = computeItemProcs(activeStats, items, target, baseKey);
       for (const r of procs) addDmg(r);
       if (procs.length > 0) itemProcsUsed = true;
     } else if (baseKey === 'R') {
-      const procs = computeItemProcs(attackerStats, items, target, 'R');
+      const procs = computeItemProcs(activeStats, items, target, 'R');
       const ultOnly = procs.filter((r) => r.abilityName === 'Malignance');
       for (const r of ultOnly) addDmg(r);
     }
