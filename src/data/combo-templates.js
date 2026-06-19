@@ -1,9 +1,9 @@
 export const COMBO_TEMPLATES = {
   Akali: [
     { name: 'Short Trade', keys: ['Q', 'P', 'AA', 'W'] },
-    { name: 'All-In', keys: ['R', 'P', 'E', 'Q', 'P', 'AA', 'E', 'R', 'Q', 'P'] },
-    { name: 'E Engage', keys: ['E', 'Q', 'P', 'AA', 'E', 'R', 'Q', 'P', 'R'] },
-    { name: 'Burst', keys: ['R', 'P', 'Q', 'P', 'AA', 'R'] },
+    { name: 'All-In', keys: ['R1', 'P', 'E1', 'Q', 'P', 'AA', 'E2', 'R2', 'Q', 'P'] },
+    { name: 'E Engage', keys: ['E1', 'Q', 'P', 'AA', 'E2', 'R1', 'Q', 'P', 'R2'] },
+    { name: 'Burst', keys: ['R1', 'P', 'Q', 'P', 'AA', 'R2'] },
     { name: 'Poke', keys: ['Q', 'P', 'AA'] },
   ],
   Lux: [

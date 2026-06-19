@@ -1,6 +1,7 @@
 // Evaluate a spell's damage calculation against an attacker's stats.
 
 import { totalStats, baseStatsAtLevel } from './stats.js';
+import { parentAbilityKey, getMultiCasts } from '../data/multi-cast.js';
 
 // Compute auto-attack damage (physical = total AD), with crit expected value and on-hits
 function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP) {
@@ -401,11 +402,20 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
   return total;
 }
 
-// Compute raw damage for one ability cast
-export function computeAbilityDamage(ability, rank, attacker, charLevel) {
+// Compute raw damage for one ability cast. When targetCalcName is provided,
+// use that specific calculation instead of auto-picking (for multi-cast abilities).
+export function computeAbilityDamage(ability, rank, attacker, charLevel, targetCalcName) {
   if (!ability) return null;
-  const { calc, name: calcName } = pickDamageCalc(ability.calculations) || {};
-  if (!calc) return null;
+  let calc, calcName;
+  if (targetCalcName && ability.calculations?.[targetCalcName]) {
+    calc = ability.calculations[targetCalcName];
+    calcName = targetCalcName;
+  } else {
+    const picked = pickDamageCalc(ability.calculations);
+    if (!picked) return null;
+    calc = picked.calc;
+    calcName = picked.name;
+  }
   const attackerWithSpell = { ...attacker, spellDataValues: ability.dataValues };
   const raw = evaluateCalc(calc, rank, attackerWithSpell, charLevel);
   return {
@@ -485,17 +495,36 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       continue;
     }
 
-    const ability = champion.abilities.find((a) => a.key === step);
+    // Resolve multi-cast keys (E1, R2, Q1…) to the parent ability + specific calc.
+    const baseKey = parentAbilityKey(step);
+    const ability = champion.abilities.find((a) => a.key === baseKey);
     if (!ability) continue;
-    const rank = step === 'P' ? 1 : (ranks[step] || 1);
-    const result = computeAbilityDamage(ability, rank, attackerStats, charLevel);
-    if (result && result.raw) addDmg(result);
+    const rank = baseKey === 'P' ? 1 : (ranks[baseKey] || 1);
+
+    let targetCalcName = null;
+    let castLabel = null;
+    if (step !== baseKey) {
+      const casts = getMultiCasts(champion.id, baseKey);
+      const cast = casts?.find((c) => c.castKey === step);
+      if (cast) {
+        targetCalcName = cast.calcName;
+        castLabel = cast.label;
+      }
+    }
+    const result = computeAbilityDamage(ability, rank, attackerStats, charLevel, targetCalcName);
+    if (result && result.raw) {
+      if (castLabel) {
+        result.abilityKey = step;
+        result.abilityName = `${ability.name} (${castLabel})`;
+      }
+      addDmg(result);
+    }
 
     if (!itemProcsUsed) {
-      const procs = computeItemProcs(attackerStats, items, target, step);
+      const procs = computeItemProcs(attackerStats, items, target, baseKey);
       for (const r of procs) addDmg(r);
       if (procs.length > 0) itemProcsUsed = true;
-    } else if (step === 'R') {
+    } else if (baseKey === 'R') {
       const procs = computeItemProcs(attackerStats, items, target, 'R');
       const ultOnly = procs.filter((r) => r.abilityName === 'Malignance');
       for (const r of ultOnly) addDmg(r);

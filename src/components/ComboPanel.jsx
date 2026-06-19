@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import meta from '../data/generated/meta.json';
 import { COMBO_TEMPLATES, getCustomCombos, saveCustomCombo, deleteCustomCombo } from '../data/combo-templates';
+import { parentAbilityKey } from '../data/multi-cast';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 
@@ -63,9 +64,10 @@ export default function ComboPanel({ build, setCombo }) {
             const isAA = key === 'AA';
             const isItem = key.startsWith('ITEM_');
             const itemId = isItem ? key.slice(5) : null;
-            const ability = !isAA && !isItem ? champ?.abilities.find((a) => a.key === key) : null;
+            const baseKey = !isAA && !isItem ? parentAbilityKey(key) : null;
+            const ability = baseKey ? champ?.abilities.find((a) => a.key === baseKey) : null;
             const iconUrl = ability?.icon
-              ? (key === 'P'
+              ? (baseKey === 'P'
                   ? `${DDRAGON_IMG}/passive/${ability.icon}`
                   : `${DDRAGON_IMG}/spell/${ability.icon}`)
               : null;
@@ -75,7 +77,8 @@ export default function ComboPanel({ build, setCombo }) {
               : isItem
               ? { borderColor: '#e67e22', color: '#e67e22' }
               : undefined;
-            const title = isAA ? 'Auto Attack' : isItem ? `Item Active` : ability?.name;
+            const isCast = baseKey && key !== baseKey;
+            const title = isAA ? 'Auto Attack' : isItem ? `Item Active` : isCast ? `${ability?.name} (${key})` : ability?.name;
             return (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className="combo-step">

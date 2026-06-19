@@ -193,6 +193,40 @@ input { font-family: inherit; }
 
 .ability-icon .placeholder { font-size: 16px; font-weight: 700; color: #5a6270; }
 
+.ability-icon.multi-cast {
+  position: relative;
+}
+
+.ability-icon.multi-cast img {
+  opacity: 0.55;
+}
+
+.cast-buttons {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.cast-btn {
+  flex: 1;
+  background: rgba(30, 35, 48, 0.85);
+  border: 1px solid #3a3f4a;
+  border-radius: 3px;
+  color: #c89b3c;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.cast-btn:hover {
+  background: rgba(200, 155, 60, 0.25);
+  border-color: #c89b3c;
+}
+
 .ability-rank { display: flex; align-items: center; justify-content: center; gap: 4px; }
 
 .rank-btn {
