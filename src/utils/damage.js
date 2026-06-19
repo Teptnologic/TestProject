@@ -507,20 +507,19 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     const rank = baseKey === 'P' ? 1 : (ranks[baseKey] || 1);
 
     let targetCalcName = null;
-    let castLabel = null;
+    let cast = null;
     if (step !== baseKey) {
       const casts = getMultiCasts(champion.id, baseKey);
-      const cast = casts?.find((c) => c.castKey === step);
-      if (cast) {
-        targetCalcName = cast.calcName;
-        castLabel = cast.label;
-      }
+      cast = casts?.find((c) => c.castKey === step) || null;
+      if (cast) targetCalcName = cast.calcName;
     }
     const result = computeAbilityDamage(ability, rank, attackerStats, charLevel, targetCalcName);
     if (result && result.raw) {
-      if (castLabel) {
+      if (cast) {
         result.abilityKey = step;
-        result.abilityName = `${ability.name} (${castLabel})`;
+        result.abilityName = `${ability.name} (${cast.label})`;
+        if (cast.damageType) result.type = cast.damageType;
+        if (cast.multiplier) result.raw *= cast.multiplier;
       }
       addDmg(result);
     }

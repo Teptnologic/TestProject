@@ -41,6 +41,8 @@ function normalizeDataValues(rawDV) {
   for (const dv of rawDV) {
     if (dv && dv.name && Array.isArray(dv.values)) {
       out[dv.name] = dv.values;
+      const lower = dv.name.toLowerCase();
+      if (lower !== dv.name) out[lower] = dv.values;
     }
   }
   return out;

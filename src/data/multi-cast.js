@@ -3,6 +3,10 @@
 // its own combo button and resolves to a specific calculation from the spell's
 // mSpellCalculations. Abilities not listed here keep the default single-button
 // behavior where pickDamageCalc chooses the best calc automatically.
+//
+// Optional per-cast fields:
+//   damageType  — override the auto-detected damage type ('magic'/'physical'/'true')
+//   multiplier  — multiply the calc result (e.g. 1.8 for W 3-hit total)
 
 export const MULTI_CAST = {
   Akali: {
@@ -13,6 +17,16 @@ export const MULTI_CAST = {
     R: [
       { castKey: 'R1', label: 'R1', name: 'R1: Perfect Execution', calcName: 'Cast1Damage' },
       { castKey: 'R2', label: 'R2', name: 'R2: Perfect Execution', calcName: 'Cast2DamageMax' },
+    ],
+  },
+  Ahri: {
+    Q: [
+      { castKey: 'Q1', label: 'Q1', name: 'Orb of Deception (out)', calcName: 'TotalDamage', damageType: 'magic' },
+      { castKey: 'Q2', label: 'Q2', name: 'Orb of Deception (return)', calcName: 'TotalDamage', damageType: 'true' },
+    ],
+    W: [
+      { castKey: 'W1', label: 'W1', name: 'Fox-Fire (1 hit)', calcName: 'SingleFireDamage' },
+      { castKey: 'W', label: 'W×3', name: 'Fox-Fire (all 3 hits)', calcName: 'SingleFireDamage', multiplier: 1.8 },
     ],
   },
   Evelynn: {
