@@ -13,11 +13,11 @@ export const COMBO_TEMPLATES = {
     { name: 'One-Shot', keys: ['Q', 'E', 'R', 'AA', 'P'] },
   ],
   Ahri: [
-    { name: 'Full Combo', keys: ['E', 'W', 'Q1', 'Q2', 'R', 'R', 'R', 'AA'] },
-    { name: 'Charm Burst', keys: ['E', 'Q1', 'Q2', 'W'] },
+    { name: 'Full Combo', keys: ['E', 'W3', 'Q1', 'Q2', 'R', 'R', 'R', 'AA'] },
+    { name: 'Charm Burst', keys: ['E', 'Q1', 'Q2', 'W3'] },
     { name: 'Poke', keys: ['Q1', 'Q2'] },
-    { name: 'All-In', keys: ['R', 'E', 'W', 'Q1', 'Q2', 'R', 'AA', 'R'] },
-    { name: 'Quick Trade', keys: ['E', 'Q1', 'Q2', 'W', 'AA'] },
+    { name: 'All-In', keys: ['R', 'E', 'W3', 'Q1', 'Q2', 'R', 'AA', 'R'] },
+    { name: 'Quick Trade', keys: ['E', 'Q1', 'Q2', 'W3', 'AA'] },
   ],
   Yone: [
     { name: 'Short Trade', keys: ['Q', 'AA', 'Q', 'AA'] },

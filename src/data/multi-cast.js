@@ -26,7 +26,7 @@ export const MULTI_CAST = {
     ],
     W: [
       { castKey: 'W1', label: 'W1', name: 'Fox-Fire (1 hit)', calcName: 'SingleFireDamage' },
-      { castKey: 'W', label: 'W×3', name: 'Fox-Fire (all 3 hits)', calcName: 'SingleFireDamage', multiplier: 1.8 },
+      { castKey: 'W3', label: 'W×3', name: 'Fox-Fire (all 3 hits)', calcName: 'SingleFireDamage', multiplier: 1.8 },
     ],
   },
   Evelynn: {
