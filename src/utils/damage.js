@@ -3,8 +3,60 @@
 import { totalStats, baseStatsAtLevel } from './stats.js';
 import { parentAbilityKey, getMultiCasts } from '../data/multi-cast.js';
 
+// Champion-specific AA modifiers
+const CHAMPION_AA = {
+  Jhin: {
+    type: 'nthShot',
+    every: 4,
+    adMultiplier: 1.5,
+    missingHpPct: {
+      kind: 'byCharLevelBreakpoints',
+      baseValue: 0.15,
+      breakpoints: [
+        { mLevel: 6, mAdditionalBonusAtThisLevel: 0.05 },
+        { mLevel: 11, mAdditionalBonusAtThisLevel: 0.05 },
+      ],
+    },
+  },
+  Vayne: {
+    onHits: [
+      {
+        type: 'nthHitPassive',
+        ability: 'W',
+        every: 3,
+        damageType: 'true',
+        maxHpRatio: [0, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11],
+        minDamage: [0, 35, 50, 65, 80, 95, 110, 125],
+        label: 'Silver Bolts',
+      },
+      {
+        type: 'empoweredAA',
+        triggerStep: 'Q',
+        damageType: 'physical',
+        totalAdRatio: [0, 0.65, 0.75, 0.85, 0.95, 1.05, 1.15, 1.25],
+        label: 'Tumble',
+      },
+    ],
+  },
+};
+
+function resolveBreakpointValue(bp, charLevel) {
+  let val = bp.baseValue || 0;
+  if (bp.initialPerLevel) val += bp.initialPerLevel * (charLevel - 1);
+  if (bp.breakpoints) {
+    for (const b of bp.breakpoints) {
+      if (charLevel >= (b.mLevel || 1)) {
+        const perLevel = b.mPerLevel || b.mBonusPerLevelAtAndAfter || 0;
+        val += perLevel * (charLevel - (b.mLevel || 1));
+        if (b.mAdditionalBonusAtThisLevel) val += b.mAdditionalBonusAtThisLevel;
+      }
+    }
+  }
+  return val;
+}
+
 // Compute auto-attack damage (physical = total AD), with crit expected value and on-hits
-function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP) {
+function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP, champCtx) {
   // Crit expected value
   const critChance = Math.min(1, attacker.crit || 0);
   let critDamageMultiplier = 1.75;
@@ -18,11 +70,23 @@ function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP)
     }
   }
   const expectedCritMult = critChance > 0 ? 1 + critChance * (critDamageMultiplier - 1) : 1;
-  const baseDmg = attacker.attackdamage * expectedCritMult;
+  let baseDmg = attacker.attackdamage * expectedCritMult;
 
-  const aaLabel = critChance > 0
+  let aaLabel = critChance > 0
     ? `Auto Attack (${Math.round(critChance * 100)}% crit)`
     : 'Auto Attack';
+
+  // Jhin 4th shot: bonus AD multiplier + missing HP execute
+  const champAA = champCtx?.championId ? CHAMPION_AA[champCtx.championId] : null;
+  if (champAA?.type === 'nthShot' && (aaIndex + 1) % champAA.every === 0) {
+    baseDmg = attacker.attackdamage * champAA.adMultiplier;
+    // 4th shot always crits
+    baseDmg *= critDamageMultiplier;
+    const missingHP = Math.max(0, targetMaxHP - targetCurrentHP);
+    const missingPct = resolveBreakpointValue(champAA.missingHpPct, attacker.level || 1);
+    baseDmg += missingHP * missingPct;
+    aaLabel = `4th Shot (${Math.round(missingPct * 100)}% missing HP)`;
+  }
 
   const results = [
     { abilityKey: 'AA', abilityName: aaLabel, raw: baseDmg, type: 'physical' },
@@ -90,6 +154,40 @@ function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP)
       }
     }
   }
+
+  // Champion-specific on-hits (Vayne W, Vayne Q empowered AA)
+  if (champAA?.onHits && champCtx) {
+    for (const oh of champAA.onHits) {
+      if (oh.type === 'nthHitPassive') {
+        const rank = champCtx.ranks?.[oh.ability] || 0;
+        if (rank > 0 && champCtx.hitCount != null && (champCtx.hitCount + 1) % oh.every === 0) {
+          const maxHpRatio = oh.maxHpRatio[rank] || 0;
+          const targetHP = targetMaxHP || 2000;
+          const raw = Math.max(oh.minDamage[rank] || 0, targetHP * maxHpRatio);
+          results.push({
+            abilityKey: 'AA',
+            abilityName: `${oh.label} (${Math.round(maxHpRatio * 100)}% max HP)`,
+            raw,
+            type: oh.damageType,
+          });
+        }
+      }
+      if (oh.type === 'empoweredAA' && champCtx.empowered === oh.triggerStep) {
+        const rank = champCtx.ranks?.[oh.triggerStep] || 0;
+        if (rank > 0) {
+          const ratio = oh.totalAdRatio[rank] || 0;
+          const raw = attacker.attackdamage * ratio;
+          results.push({
+            abilityKey: 'AA',
+            abilityName: `${oh.label} (${Math.round(ratio * 100)}% AD)`,
+            raw,
+            type: oh.damageType,
+          });
+        }
+      }
+    }
+  }
+
   return results;
 }
 
@@ -466,6 +564,8 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let lastWasSpell = false;
   let itemProcsUsed = false;
   let aaCount = 0;
+  let hitCount = 0; // consecutive hits on target (for Vayne W)
+  let empowered = null; // ability key that empowers next AA (for Vayne Q)
   const targetMaxHP = (target.hp || 0) + (target.shield || 0);
   let targetCurrentHP = targetMaxHP;
 
@@ -478,10 +578,20 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     targetCurrentHP = Math.max(0, targetCurrentHP - post);
   }
 
+  const champId = champion?.id;
+
   for (const step of combo) {
     if (step === 'AA') {
-      const aaResults = computeAADamage(attackerStats, items, aaCount, targetCurrentHP, targetMaxHP);
+      const champCtx = {
+        championId: champId,
+        ranks,
+        hitCount,
+        empowered,
+      };
+      const aaResults = computeAADamage(attackerStats, items, aaCount, targetCurrentHP, targetMaxHP, champCtx);
       aaCount++;
+      hitCount++;
+      empowered = null; // consumed
       for (const r of aaResults) addDmg(r);
       if (lastWasSpell) {
         const sb = computeSpellbladeDamage(attackerStats, items);
@@ -522,6 +632,16 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         if (cast.multiplier) result.raw *= cast.multiplier;
       }
       addDmg(result);
+    }
+
+    // Track empowered-AA abilities (Vayne Q empowers next AA)
+    const champAA = CHAMPION_AA[champId];
+    if (champAA?.onHits) {
+      for (const oh of champAA.onHits) {
+        if (oh.type === 'empoweredAA' && baseKey === oh.triggerStep) {
+          empowered = oh.triggerStep;
+        }
+      }
     }
 
     if (!itemProcsUsed) {

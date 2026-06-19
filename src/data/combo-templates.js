@@ -44,8 +44,8 @@ export const COMBO_TEMPLATES = {
     { name: 'Poke', keys: ['Q', 'AA'] },
     { name: 'Root Combo', keys: ['W', 'Q', 'AA'] },
     { name: 'Trap Burst', keys: ['E', 'W', 'Q', 'AA'] },
+    { name: '4th Shot', keys: ['AA', 'AA', 'AA', 'AA'] },
     { name: 'Full Combo', keys: ['W', 'Q', 'AA', 'AA', 'AA', 'AA'] },
-    { name: '4th Shot Trade', keys: ['AA', 'AA', 'AA', 'Q', 'AA'] },
     { name: 'Ult (all 4)', keys: ['R1', 'R1', 'R1', 'R4'] },
   ],
 };
