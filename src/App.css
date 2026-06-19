@@ -1035,49 +1035,6 @@ input { font-family: inherit; }
   font-size: 14px;
 }
 
-.landing-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.landing-search {
-  flex: 1;
-  min-width: 200px;
-  padding: 10px 14px;
-  background: #1e2330;
-  border: 1px solid #2a2f3a;
-  border-radius: 6px;
-  color: #c8cdd3;
-  font-size: 14px;
-}
-
-.landing-search:focus {
-  outline: none;
-  border-color: #c89b3c;
-}
-
-.landing-tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.landing-tag {
-  padding: 6px 12px;
-  background: #1e2330;
-  border: 1px solid #2a2f3a;
-  border-radius: 16px;
-  color: #8b92a0;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.landing-tag:hover { border-color: #c89b3c; color: #c8cdd3; }
-.landing-tag.active { background: #c89b3c; color: #0d1117; border-color: #c89b3c; font-weight: 600; }
 
 .landing-grid {
   display: grid;
@@ -1123,36 +1080,45 @@ input { font-family: inherit; }
   max-width: 100%;
 }
 
-.champ-card.disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  pointer-events: auto;
-}
 
-.champ-card.disabled img {
-  filter: grayscale(1);
-}
-
-.champ-card-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 8px;
-  background: #2a2f3a;
-  color: #5a6270;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.landing-footer {
+.landing-request {
   text-align: center;
-  margin-top: 24px;
-  font-size: 12px;
-  color: #5a6270;
+  margin-top: 40px;
+  padding: 24px;
+  background: #1e2330;
+  border: 1px solid #2a2f3a;
+  border-radius: 10px;
 }
+
+.landing-request h3 {
+  color: #c89b3c;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.landing-request p {
+  color: #8b92a0;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.landing-vote-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #c89b3c;
+  color: #0d1117;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.landing-vote-btn:hover {
+  background: #d4a94a;
+}
+
 
 @media (max-width: 900px) {
   .main-grid { grid-template-columns: 1fr; }
