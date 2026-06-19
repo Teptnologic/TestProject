@@ -1,9 +1,9 @@
 export const COMBO_TEMPLATES = {
   Akali: [
     { name: 'Short Trade', keys: ['Q', 'P', 'AA', 'W'] },
-    { name: 'All-In', keys: ['R', 'P', 'E', 'Q', 'P', 'AA', 'E', 'R', 'Q', 'P'] },
-    { name: 'E Engage', keys: ['E', 'Q', 'P', 'AA', 'E', 'R', 'Q', 'P', 'R'] },
-    { name: 'Burst', keys: ['R', 'P', 'Q', 'P', 'AA', 'R'] },
+    { name: 'All-In', keys: ['R1', 'P', 'E1', 'Q', 'P', 'AA', 'E2', 'R2', 'Q', 'P'] },
+    { name: 'E Engage', keys: ['E1', 'Q', 'P', 'AA', 'E2', 'R1', 'Q', 'P', 'R2'] },
+    { name: 'Burst', keys: ['R1', 'P', 'Q', 'P', 'AA', 'R2'] },
     { name: 'Poke', keys: ['Q', 'P', 'AA'] },
   ],
   Lux: [
@@ -13,11 +13,11 @@ export const COMBO_TEMPLATES = {
     { name: 'One-Shot', keys: ['Q', 'E', 'R', 'AA', 'P'] },
   ],
   Ahri: [
-    { name: 'Full Combo', keys: ['E', 'W', 'Q', 'R', 'AA'] },
-    { name: 'Charm Burst', keys: ['E', 'Q', 'W'] },
-    { name: 'Poke', keys: ['Q'] },
-    { name: 'All-In', keys: ['R', 'E', 'W', 'Q', 'R', 'AA', 'R'] },
-    { name: 'Quick Trade', keys: ['E', 'Q', 'W', 'AA'] },
+    { name: 'Full Combo', keys: ['E', 'W3', 'Q1', 'Q2', 'R', 'R', 'R', 'AA'] },
+    { name: 'Charm Burst', keys: ['E', 'Q1', 'Q2', 'W3'] },
+    { name: 'Poke', keys: ['Q1', 'Q2'] },
+    { name: 'All-In', keys: ['R', 'E', 'W3', 'Q1', 'Q2', 'R', 'AA', 'R'] },
+    { name: 'Quick Trade', keys: ['E', 'Q1', 'Q2', 'W3', 'AA'] },
   ],
   Yone: [
     { name: 'Short Trade', keys: ['Q', 'AA', 'Q', 'AA'] },

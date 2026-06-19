@@ -41,6 +41,8 @@ function normalizeDataValues(rawDV) {
   for (const dv of rawDV) {
     if (dv && dv.name && Array.isArray(dv.values)) {
       out[dv.name] = dv.values;
+      const lower = dv.name.toLowerCase();
+      if (lower !== dv.name) out[lower] = dv.values;
     }
   }
   return out;
@@ -51,9 +53,11 @@ function normalizeCalculations(rawCalc) {
   const out = {};
   for (const [name, calc] of Object.entries(rawCalc)) {
     if (!calc || !Array.isArray(calc.mFormulaParts)) continue;
+    const mult = calc.mMultiplier;
     out[name] = {
       parts: calc.mFormulaParts.map(normalizeFormulaPart).filter(Boolean),
-      multiplier: calc.mMultiplier?.mNumber,
+      multiplier: mult?.mNumber,
+      multiplierPart: mult && !mult.mNumber ? normalizeFormulaPart(mult) : undefined,
     };
   }
   return out;
