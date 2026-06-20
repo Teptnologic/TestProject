@@ -19,6 +19,7 @@ const CHAMPION_AA = {
     },
   },
   Vayne: {
+    appliesStacks: ['E'],
     onHits: [
       {
         type: 'nthHitPassive',
@@ -645,12 +646,36 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       addDmg(result);
     }
 
-    // Track empowered-AA abilities (Vayne Q empowers next AA)
+    // Champion-specific ability interactions
     const champAA = CHAMPION_AA[champId];
-    if (champAA?.onHits) {
-      for (const oh of champAA.onHits) {
-        if (oh.type === 'empoweredAA' && baseKey === oh.triggerStep) {
-          empowered = oh.triggerStep;
+    if (champAA) {
+      // Abilities that apply on-hit stacks (Vayne E applies Silver Bolts)
+      if (champAA.appliesStacks?.includes(baseKey)) {
+        hitCount++;
+        // Check if this hit procs an nthHitPassive
+        for (const oh of champAA.onHits || []) {
+          if (oh.type === 'nthHitPassive') {
+            const wRank = ranks?.[oh.ability] || 0;
+            if (wRank > 0 && hitCount % oh.every === 0) {
+              const maxHpRatio = oh.maxHpRatio[wRank] || 0;
+              const targetHP = targetMaxHP || 2000;
+              const raw = Math.max(oh.minDamage[wRank] || 0, targetHP * maxHpRatio);
+              addDmg({
+                abilityKey: baseKey,
+                abilityName: `${oh.label} (${Math.round(maxHpRatio * 100)}% max HP)`,
+                raw,
+                type: oh.damageType,
+              });
+            }
+          }
+        }
+      }
+      // Track empowered-AA abilities (Vayne Q empowers next AA)
+      if (champAA.onHits) {
+        for (const oh of champAA.onHits) {
+          if (oh.type === 'empoweredAA' && baseKey === oh.triggerStep) {
+            empowered = oh.triggerStep;
+          }
         }
       }
     }
