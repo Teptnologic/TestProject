@@ -46,7 +46,7 @@ function formatValue(value, key) {
 }
 
 function dataValueIndex(rank) {
-  return Math.max(1, rank || 1);
+  return Math.max(0, (rank || 1) - 1);
 }
 
 function lookupDataValue(ability, key, rank) {
@@ -60,11 +60,10 @@ function lookupDataValue(ability, key, rank) {
 }
 
 function lookupCalculation(ability, key, rank, attacker, charLevel) {
-  const idx = dataValueIndex(rank);
   for (const [name, calc] of Object.entries(ability.calculations || {})) {
     if (name.toLowerCase() !== key.toLowerCase()) continue;
     const attackerWithSpell = { ...attacker, spellDataValues: ability.dataValues };
-    const v = evaluateCalc(calc, idx, attackerWithSpell, charLevel);
+    const v = evaluateCalc(calc, rank, attackerWithSpell, charLevel);
     return formatValue(Math.round(v), key);
   }
   return null;
@@ -73,14 +72,14 @@ function lookupCalculation(ability, key, rank, attacker, charLevel) {
 function lookupEffect(ability, key, rank) {
   const m = key.match(/^e(\d+)$/i);
   if (!m || !ability.effect) return null;
-  const idx = dataValueIndex(rank) - 1;
+  const idx = dataValueIndex(rank);
   const arr = ability.effect[parseInt(m[1], 10)];
   if (!Array.isArray(arr)) return null;
   return formatValue(arr[idx] ?? arr[arr.length - 1], key);
 }
 
 function lookupStandard(ability, key, rank) {
-  const idx = dataValueIndex(rank) - 1;
+  const idx = dataValueIndex(rank);
   const k = key.toLowerCase();
   if (k === 'cooldown' && ability.cooldown) {
     return formatValue(ability.cooldown[idx] ?? ability.cooldown.at(-1), key);

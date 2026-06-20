@@ -445,17 +445,18 @@ function statValue(attacker, statName) {
 
 // Evaluate a single calculation at the given ability rank + attacker stats
 export function evaluateCalc(calc, rank, attacker, charLevel) {
+  const dvIdx = Math.max(0, (rank || 1) - 1);
   let total = 0;
   for (const part of calc.parts) {
     switch (part.kind) {
       case 'dataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        if (arr) total += arr[rank] ?? 0;
+        if (arr) total += arr[dvIdx] ?? 0;
         break;
       }
       case 'statByDataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        const ratio = arr ? arr[rank] ?? 0 : 0;
+        const ratio = arr ? arr[dvIdx] ?? 0 : 0;
         total += statValue(attacker, part.stat) * ratio;
         break;
       }
