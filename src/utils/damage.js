@@ -521,6 +521,15 @@ export function computeAbilityDamage(ability, rank, attacker, charLevel, targetC
     calc = picked.calc;
     calcName = picked.name;
   }
+  // Resolve GameCalculationModified: use the base calc's parts, then apply multiplier
+  if (calc.modified && ability.calculations?.[calc.modified]) {
+    const baseCalc = ability.calculations[calc.modified];
+    const multParts = calc.multiplierParts;
+    calc = {
+      parts: [...baseCalc.parts],
+      multiplierPart: multParts?.[0],
+    };
+  }
   const attackerWithSpell = { ...attacker, spellDataValues: ability.dataValues };
   const raw = evaluateCalc(calc, rank, attackerWithSpell, charLevel);
   return {
