@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { championList } from '../data';
 import { COMBO_TEMPLATES } from '../data/combo-templates';
 import meta from '../data/generated/meta.json';
@@ -6,6 +7,27 @@ import AdBanner from './AdBanner';
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 const SUPPORTED = Object.keys(COMBO_TEMPLATES);
 const DISCORD_URL = 'https://discord.gg/qw3xeUfN48';
+
+function AdBanner() {
+  const pushed = useRef(false);
+  useEffect(() => {
+    if (pushed.current) return;
+    pushed.current = true;
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* noop */ }
+  }, []);
+  return (
+    <div style={{ margin: '24px 0' }}>
+      <ins
+        className="adsbygoogle"
+        style={{ display: 'block' }}
+        data-ad-client="ca-pub-8650041218363700"
+        data-ad-slot="6830278012"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  );
+}
 
 export default function LandingPage({ onSelect }) {
   const supported = SUPPORTED.map((id) => championList.find((c) => c.id === id)).filter(Boolean);
@@ -34,6 +56,8 @@ export default function LandingPage({ onSelect }) {
           </button>
         ))}
       </div>
+
+      <AdBanner />
 
       <div className="landing-request">
         <h3>More champions coming soon</h3>
