@@ -652,6 +652,14 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         result.abilityName = `${ability.name} (${cast.label})`;
         if (cast.damageType) result.type = cast.damageType;
         if (cast.multiplier) result.raw *= cast.multiplier;
+        // Execute scaling: damage scales linearly from 1× to maxMultiplier× based on missing HP
+        if (cast.execute) {
+          const missingPct = targetMaxHP > 0 ? Math.max(0, 1 - targetCurrentHP / targetMaxHP) : 0;
+          const t = Math.min(1, missingPct / cast.execute.threshold);
+          const executeMult = 1 + (cast.execute.maxMultiplier - 1) * t;
+          result.raw *= executeMult;
+          result.abilityName += ` ${Math.round(executeMult * 100)}%`;
+        }
       }
       addDmg(result);
     }

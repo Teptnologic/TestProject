@@ -16,7 +16,7 @@ export const MULTI_CAST = {
     ],
     R: [
       { castKey: 'R1', label: 'R1', name: 'R1: Perfect Execution', calcName: 'Cast1Damage' },
-      { castKey: 'R2', label: 'R2', name: 'R2: Perfect Execution', calcName: 'Cast2DamageMax' },
+      { castKey: 'R2', label: 'R2', name: 'R2: Perfect Execution', calcName: 'Cast2DamageMin', execute: { maxMultiplier: 3, threshold: 0.3 } },
     ],
   },
   Ahri: {
