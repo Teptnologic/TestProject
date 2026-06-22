@@ -16,10 +16,20 @@ export default function AbilityRow({ build, setBuild, stats, setCombo }) {
     return ['Q', 'W', 'E', 'R'].reduce((sum, k) => sum + (ranks[k] || 0), 0);
   }
 
+  function maxRankForLevel(key, level) {
+    if (key === 'R') {
+      if (level < 6) return 0;
+      if (level < 11) return 1;
+      if (level < 16) return 2;
+      return 3;
+    }
+    return Math.min(5, Math.ceil(level / 2));
+  }
+
   function adjustRank(key, delta) {
     setBuild((b) => {
       const ability = champ.abilities.find((a) => a.key === key);
-      const max = ability?.maxrank ?? 5;
+      const max = Math.min(ability?.maxrank ?? 5, maxRankForLevel(key, b.level));
       const cur = b.ranks[key] || 0;
       let next = Math.max(0, Math.min(max, cur + delta));
       if (delta > 0 && totalPointsSpent(b.ranks) >= b.level) return b;
@@ -116,7 +126,7 @@ export default function AbilityRow({ build, setBuild, stats, setCombo }) {
               <div className="ability-rank">
                 <button className="rank-btn" onClick={() => adjustRank(ability.key, -1)} disabled={rank === 0}>-</button>
                 <span className="rank-value">{rank}</span>
-                <button className="rank-btn" onClick={() => adjustRank(ability.key, 1)} disabled={rank >= ability.maxrank || pointsAtCap}>+</button>
+                <button className="rank-btn" onClick={() => adjustRank(ability.key, 1)} disabled={rank >= Math.min(ability.maxrank, maxRankForLevel(ability.key, build.level)) || pointsAtCap}>+</button>
               </div>
             ) : (
               <div className="ability-rank"><span className="rank-value">—</span></div>

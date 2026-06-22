@@ -67,6 +67,7 @@ export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
                 max="18"
                 value={build.level}
                 onChange={(e) => setBuild((b) => ({ ...b, level: parseInt(e.target.value) }))}
+                style={{ '--fill': `${((build.level - 1) / 17) * 100}%` }}
               />
               <span className="level-value">{build.level}</span>
             </div>
