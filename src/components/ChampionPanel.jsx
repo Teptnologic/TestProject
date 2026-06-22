@@ -66,7 +66,26 @@ export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
                 min="1"
                 max="18"
                 value={build.level}
-                onChange={(e) => setBuild((b) => ({ ...b, level: parseInt(e.target.value) }))}
+                onChange={(e) => {
+                  const newLevel = parseInt(e.target.value);
+                  setBuild((b) => {
+                    const ranks = { ...b.ranks };
+                    const maxR = newLevel < 6 ? 0 : newLevel < 11 ? 1 : newLevel < 16 ? 2 : 3;
+                    const maxBasic = Math.min(5, Math.ceil(newLevel / 2));
+                    for (const k of ['Q', 'W', 'E']) {
+                      if ((ranks[k] || 0) > maxBasic) ranks[k] = maxBasic;
+                    }
+                    if ((ranks.R || 0) > maxR) ranks.R = maxR;
+                    // Clamp total points to new level
+                    let total = ['Q', 'W', 'E', 'R'].reduce((s, k) => s + (ranks[k] || 0), 0);
+                    while (total > newLevel) {
+                      for (const k of ['R', 'E', 'W', 'Q']) {
+                        if (ranks[k] > 0 && total > newLevel) { ranks[k]--; total--; }
+                      }
+                    }
+                    return { ...b, level: newLevel, ranks };
+                  });
+                }}
                 style={{ '--fill': `${((build.level - 1) / 17) * 100}%` }}
               />
               <span className="level-value">{build.level}</span>
