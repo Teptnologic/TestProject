@@ -200,17 +200,15 @@ export default function App() {
             )}
           </div>
 
-          <div className="detail-layout">
-            <aside className="ad-sidebar-left">
-              <AdBanner slot="6142626696" label="Champion Page Left" style={{ position: 'sticky', top: 80 }} />
-            </aside>
-            <main className="main-grid">
-              <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
-              <TargetPanel target={target} setTarget={setTarget} />
-              <ComboPanel build={fullBuild} setCombo={setCombo} />
-              <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
-            </main>
-          </div>
+          <aside className="ad-sidebar-left">
+            <AdBanner slot="6142626696" label="Champion Page Left" />
+          </aside>
+          <main className="main-grid">
+            <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
+            <TargetPanel target={target} setTarget={setTarget} />
+            <ComboPanel build={fullBuild} setCombo={setCombo} />
+            <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
+          </main>
         </>
       )}
     </>

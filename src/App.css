@@ -53,17 +53,16 @@ input { font-family: inherit; }
 
 .share-btn:hover { background: #c89b3c; color: #0d1117; }
 
-.detail-layout {
-  display: flex;
-}
-
 .ad-sidebar-left {
+  position: fixed;
+  left: 0;
+  top: 56px;
   width: 160px;
-  flex-shrink: 0;
+  height: calc(100vh - 56px);
   background: #0a0d13;
-  min-height: calc(100vh - 56px);
   padding: 16px 8px;
   border-right: 1px solid #2a2f3a;
+  z-index: 10;
 }
 
 .main-grid {
@@ -71,8 +70,6 @@ input { font-family: inherit; }
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 20px;
-  flex: 1;
-  min-width: 0;
   max-width: 1400px;
   margin: 0 auto;
 }
