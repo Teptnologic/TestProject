@@ -53,13 +53,26 @@ input { font-family: inherit; }
 
 .share-btn:hover { background: #c89b3c; color: #0d1117; }
 
+.detail-layout {
+  display: flex;
+  max-width: 1600px;
+  margin: 0 auto;
+  gap: 16px;
+  padding: 0 16px;
+}
+
+.ad-sidebar-left {
+  width: 160px;
+  flex-shrink: 0;
+}
+
 .main-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 20px 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .card {
@@ -1158,6 +1171,7 @@ input { font-family: inherit; }
 
 @media (max-width: 900px) {
   .main-grid { grid-template-columns: 1fr; }
+  .ad-sidebar-left { display: none; }
   .damage-summary { grid-template-columns: repeat(2, 1fr); }
   .compare-grid { grid-template-columns: 1fr; }
   .compare-hp-bars { grid-template-columns: 1fr; }

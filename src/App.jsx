@@ -10,6 +10,7 @@ import TargetPanel from './components/TargetPanel';
 import ComboPanel from './components/ComboPanel';
 import DamagePanel from './components/DamagePanel';
 import LandingPage from './components/LandingPage';
+import AdBanner from './components/AdBanner';
 
 import './App.css';
 
@@ -199,12 +200,17 @@ export default function App() {
             )}
           </div>
 
-          <main className="main-grid">
-            <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
-            <TargetPanel target={target} setTarget={setTarget} />
-            <ComboPanel build={fullBuild} setCombo={setCombo} />
-            <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
-          </main>
+          <div className="detail-layout">
+            <aside className="ad-sidebar-left">
+              <AdBanner slot="6142626696" label="Champion Page Left" style={{ position: 'sticky', top: 80 }} />
+            </aside>
+            <main className="main-grid">
+              <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
+              <TargetPanel target={target} setTarget={setTarget} />
+              <ComboPanel build={fullBuild} setCombo={setCombo} />
+              <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
+            </main>
+          </div>
         </>
       )}
     </>
