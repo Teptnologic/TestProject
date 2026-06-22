@@ -43,8 +43,8 @@ export const MULTI_CAST = {
   },
   Jhin: {
     R: [
-      { castKey: 'R1', label: 'R', name: 'Curtain Call (1 shot)', calcName: 'DamageCalc' },
-      { castKey: 'R4', label: 'R4', name: 'Curtain Call (4th shot, 2×)', calcName: 'DamageCalc', multiplier: 2 },
+      { castKey: 'R1', label: 'R', name: 'Curtain Call (1 shot)', calcName: 'DamageCalc', execute: { maxMultiplier: 4, threshold: 1.0 } },
+      { castKey: 'R4', label: 'R4', name: 'Curtain Call (4th shot, 2×)', calcName: 'DamageCalc', multiplier: 2, execute: { maxMultiplier: 4, threshold: 1.0 } },
     ],
   },
 };
