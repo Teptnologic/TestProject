@@ -61,7 +61,7 @@ export default function ComboPanel({ build, setCombo }) {
         <div className="combo-sequence">
           {combo.length === 0 && <span className="combo-empty">No abilities yet — click Q/W/E/R above to build a combo</span>}
           {combo.map((key, idx) => {
-            const isAA = key === 'AA';
+            const isAA = key === 'AA' || key === 'AA4';
             const isItem = key.startsWith('ITEM_');
             const itemId = isItem ? key.slice(5) : null;
             const baseKey = !isAA && !isItem ? parentAbilityKey(key) : null;
@@ -78,12 +78,12 @@ export default function ComboPanel({ build, setCombo }) {
               ? { borderColor: '#e67e22', color: '#e67e22' }
               : undefined;
             const isCast = baseKey && key !== baseKey;
-            const title = isAA ? 'Auto Attack' : isItem ? `Item Active` : isCast ? `${ability?.name} (${key})` : ability?.name;
+            const title = isAA ? (key === 'AA4' ? '4th Shot' : 'Auto Attack') : isItem ? `Item Active` : isCast ? `${ability?.name} (${key})` : ability?.name;
             return (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className="combo-step">
                   <div className="combo-icon" title={title} style={stepStyle}>
-                    {isAA ? <span>AA</span>
+                    {isAA ? <span>{key === 'AA4' ? '4th' : 'AA'}</span>
                       : isItem ? <img src={itemIconUrl} alt="Item" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                       : iconUrl ? <img src={iconUrl} alt={key} />
                       : <span>{key}</span>}

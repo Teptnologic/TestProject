@@ -1,6 +1,7 @@
 import { championList } from '../data';
 import { COMBO_TEMPLATES } from '../data/combo-templates';
 import meta from '../data/generated/meta.json';
+import AdBanner from './AdBanner';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 const SUPPORTED = Object.keys(COMBO_TEMPLATES);
@@ -46,6 +47,8 @@ export default function LandingPage({ onSelect }) {
           Join Discord
         </a>
       </div>
+
+      <AdBanner slot="6830278012" label="Landing Bottom Banner" style={{ margin: '24px 0' }} />
     </div>
   );
 }

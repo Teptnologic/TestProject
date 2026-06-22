@@ -597,14 +597,15 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let activeStats = attackerStats;
 
   for (const step of combo) {
-    if (step === 'AA') {
+    if (step === 'AA' || step === 'AA4') {
+      const forceIndex = step === 'AA4' ? 3 : aaCount;
       const champCtx = {
         championId: champId,
         ranks,
         hitCount,
         empowered,
       };
-      const aaResults = computeAADamage(activeStats, items, aaCount, targetCurrentHP, targetMaxHP, champCtx);
+      const aaResults = computeAADamage(activeStats, items, forceIndex, targetCurrentHP, targetMaxHP, champCtx);
       aaCount++;
       hitCount++;
       empowered = null; // consumed

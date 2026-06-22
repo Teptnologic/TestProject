@@ -51,13 +51,23 @@ export default function AbilityRow({ build, setBuild, stats, setCombo }) {
           title="Auto Attack"
           html="Basic attack dealing physical damage based on your Attack Damage. Click to add to combo."
         >
-          <div
-            className="ability-icon"
-            onClick={() => addToCombo('AA')}
-            style={{ borderColor: '#f39c12' }}
-          >
-            <span className="placeholder" style={{ color: '#f39c12', fontSize: '14px' }}>AA</span>
-          </div>
+          {champ?.id === 'Jhin' ? (
+            <div className="ability-icon multi-cast" style={{ borderColor: '#f39c12' }}>
+              <span className="placeholder" style={{ color: '#f39c12', fontSize: '14px' }}>AA</span>
+              <div className="cast-buttons">
+                <button className="cast-btn" onClick={(e) => { e.stopPropagation(); addToCombo('AA'); }} title="Auto Attack">AA</button>
+                <button className="cast-btn" onClick={(e) => { e.stopPropagation(); addToCombo('AA4'); }} title="4th Shot">4th</button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="ability-icon"
+              onClick={() => addToCombo('AA')}
+              style={{ borderColor: '#f39c12' }}
+            >
+              <span className="placeholder" style={{ color: '#f39c12', fontSize: '14px' }}>AA</span>
+            </div>
+          )}
         </GameTooltip>
         <div className="ability-rank"><span className="rank-value">—</span></div>
         <div className="ability-label">Auto Atk</div>
