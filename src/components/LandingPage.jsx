@@ -67,8 +67,6 @@ export default function LandingPage({ onSelect }) {
         ))}
       </div>
 
-      <AdBanner />
-
       <div className="landing-request">
         <h3>More champions coming soon</h3>
         <p>Want your main added next? Join our Discord and vote for the next champion.</p>
@@ -81,6 +79,8 @@ export default function LandingPage({ onSelect }) {
           Join Discord
         </a>
       </div>
+
+      <AdBanner />
     </div>
   );
 }
