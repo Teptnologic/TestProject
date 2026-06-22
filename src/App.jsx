@@ -162,7 +162,7 @@ export default function App() {
     <>
       <header className="app-header">
         <h1 className="app-title" onClick={() => selectFromLanding(null)} style={{ cursor: 'pointer' }}>
-          <img src="/favicon-32.png" alt="" className="app-logo" />
+          <img src="/boris-full.png" alt="" className="app-logo" />
           Boris Diff
         </h1>
         <span className="patch">Patch {meta.version}</span>

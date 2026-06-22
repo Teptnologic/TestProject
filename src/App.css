@@ -30,8 +30,8 @@ input { font-family: inherit; }
 }
 
 .app-logo {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 4px;
   image-rendering: pixelated;
 }
