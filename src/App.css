@@ -284,6 +284,16 @@ input { font-family: inherit; }
 .rank-value { font-size: 13px; color: #c8cdd3; min-width: 14px; text-align: center; }
 .ability-label { font-size: 10px; color: #5a6270; margin-top: 2px; }
 
+.items-grid-header { display: flex; justify-content: flex-end; min-height: 20px; margin-bottom: 4px; }
+.clear-items-btn {
+  background: none;
+  border: none;
+  color: #5a6270;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+.clear-items-btn:hover { color: #e74c3c; }
 .items-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 
 .item-slot {
