@@ -19,21 +19,22 @@ const CHAMPION_AA = {
     },
   },
   Vayne: {
+    appliesStacks: ['E'],
     onHits: [
       {
         type: 'nthHitPassive',
         ability: 'W',
         every: 3,
         damageType: 'true',
-        maxHpRatio: [0, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11],
-        minDamage: [0, 35, 50, 65, 80, 95, 110, 125],
+        maxHpRatio: [0, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11],
+        minDamage: [0, 50, 65, 80, 95, 110, 125],
         label: 'Silver Bolts',
       },
       {
         type: 'empoweredAA',
         triggerStep: 'Q',
         damageType: 'physical',
-        totalAdRatio: [0, 0.65, 0.75, 0.85, 0.95, 1.05, 1.15, 1.25],
+        totalAdRatio: [0, 0.75, 0.85, 0.95, 1.05, 1.15, 1.25],
         label: 'Tumble',
       },
     ],
@@ -443,18 +444,23 @@ function statValue(attacker, statName) {
 }
 
 // Evaluate a single calculation at the given ability rank + attacker stats
+// DataValue arrays are 1-indexed: index 0 is unused, index 1 = rank 1
+function dvIndex(rank) {
+  return Math.max(1, rank || 1);
+}
+
 export function evaluateCalc(calc, rank, attacker, charLevel) {
   let total = 0;
   for (const part of calc.parts) {
     switch (part.kind) {
       case 'dataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        if (arr) total += arr[rank] ?? 0;
+        if (arr) total += arr[dvIndex(rank)] ?? 0;
         break;
       }
       case 'statByDataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        const ratio = arr ? arr[rank] ?? 0 : 0;
+        const ratio = arr ? arr[dvIndex(rank)] ?? 0 : 0;
         total += statValue(attacker, part.stat) * ratio;
         break;
       }
@@ -518,6 +524,15 @@ export function computeAbilityDamage(ability, rank, attacker, charLevel, targetC
     if (!picked) return null;
     calc = picked.calc;
     calcName = picked.name;
+  }
+  // Resolve GameCalculationModified: use the base calc's parts, then apply multiplier
+  if (calc.modified && ability.calculations?.[calc.modified]) {
+    const baseCalc = ability.calculations[calc.modified];
+    const multParts = calc.multiplierParts;
+    calc = {
+      parts: [...baseCalc.parts],
+      multiplierPart: multParts?.[0],
+    };
   }
   const attackerWithSpell = { ...attacker, spellDataValues: ability.dataValues };
   const raw = evaluateCalc(calc, rank, attackerWithSpell, charLevel);
@@ -641,16 +656,48 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         result.abilityName = `${ability.name} (${cast.label})`;
         if (cast.damageType) result.type = cast.damageType;
         if (cast.multiplier) result.raw *= cast.multiplier;
+        // Execute scaling: damage scales linearly from 1× to maxMultiplier× based on missing HP
+        if (cast.execute) {
+          const missingPct = targetMaxHP > 0 ? Math.max(0, 1 - targetCurrentHP / targetMaxHP) : 0;
+          const t = Math.min(1, missingPct / cast.execute.threshold);
+          const executeMult = 1 + (cast.execute.maxMultiplier - 1) * t;
+          result.raw *= executeMult;
+          result.abilityName += ` ${Math.round(executeMult * 100)}%`;
+        }
       }
       addDmg(result);
     }
 
-    // Track empowered-AA abilities (Vayne Q empowers next AA)
+    // Champion-specific ability interactions
     const champAA = CHAMPION_AA[champId];
-    if (champAA?.onHits) {
-      for (const oh of champAA.onHits) {
-        if (oh.type === 'empoweredAA' && baseKey === oh.triggerStep) {
-          empowered = oh.triggerStep;
+    if (champAA) {
+      // Abilities that apply on-hit stacks (Vayne E applies Silver Bolts)
+      if (champAA.appliesStacks?.includes(baseKey)) {
+        hitCount++;
+        // Check if this hit procs an nthHitPassive
+        for (const oh of champAA.onHits || []) {
+          if (oh.type === 'nthHitPassive') {
+            const wRank = ranks?.[oh.ability] || 0;
+            if (wRank > 0 && hitCount % oh.every === 0) {
+              const maxHpRatio = oh.maxHpRatio[wRank] || 0;
+              const targetHP = targetMaxHP || 2000;
+              const raw = Math.max(oh.minDamage[wRank] || 0, targetHP * maxHpRatio);
+              addDmg({
+                abilityKey: baseKey,
+                abilityName: `${oh.label} (${Math.round(maxHpRatio * 100)}% max HP)`,
+                raw,
+                type: oh.damageType,
+              });
+            }
+          }
+        }
+      }
+      // Track empowered-AA abilities (Vayne Q empowers next AA)
+      if (champAA.onHits) {
+        for (const oh of champAA.onHits) {
+          if (oh.type === 'empoweredAA' && baseKey === oh.triggerStep) {
+            empowered = oh.triggerStep;
+          }
         }
       }
     }

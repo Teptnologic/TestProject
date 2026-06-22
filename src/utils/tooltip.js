@@ -45,6 +45,7 @@ function formatValue(value, key) {
   return value.toFixed(1).replace(/\.0$/, '');
 }
 
+// DataValue arrays are 1-indexed: index 0 is unused, index 1 = rank 1
 function dataValueIndex(rank) {
   return Math.max(1, rank || 1);
 }
@@ -60,11 +61,10 @@ function lookupDataValue(ability, key, rank) {
 }
 
 function lookupCalculation(ability, key, rank, attacker, charLevel) {
-  const idx = dataValueIndex(rank);
   for (const [name, calc] of Object.entries(ability.calculations || {})) {
     if (name.toLowerCase() !== key.toLowerCase()) continue;
     const attackerWithSpell = { ...attacker, spellDataValues: ability.dataValues };
-    const v = evaluateCalc(calc, idx, attackerWithSpell, charLevel);
+    const v = evaluateCalc(calc, rank, attackerWithSpell, charLevel);
     return formatValue(Math.round(v), key);
   }
   return null;
@@ -139,12 +139,14 @@ export function formatItemTooltip(item) {
 
 function evaluateSubPart(part, dataValues, rank, charLevel) {
   if (!part) return 0;
-  const idx = dataValueIndex(rank);
   const lvl = charLevel || 1;
   switch (part.kind) {
     case 'dataValue': {
       const arr = dataValues?.[part.name];
-      return arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
+      if (!arr) return 0;
+      if (!Array.isArray(arr)) return arr;
+      const idx = dataValueIndex(rank);
+      return arr[idx] ?? arr[arr.length - 1];
     }
     case 'byCharLevel': {
       const vidx = Math.max(0, Math.min(lvl, (part.values?.length || 1) - 1));
@@ -177,8 +179,9 @@ function evaluateSubPart(part, dataValues, rank, charLevel) {
 
 function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
   if (!calc?.parts?.length) return null;
-  const idx = dataValueIndex(rank);
   const segments = [];
+
+  const idx = dataValueIndex(rank);
 
   for (const part of calc.parts) {
     switch (part.kind) {

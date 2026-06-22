@@ -30,8 +30,8 @@ input { font-family: inherit; }
 }
 
 .app-logo {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 4px;
   image-rendering: pixelated;
 }
@@ -146,7 +146,33 @@ input { font-family: inherit; }
 
 .level-control { display: flex; align-items: center; gap: 10px; }
 .level-control label { font-size: 12px; color: #8b92a0; text-transform: uppercase; }
-.level-slider { flex: 1; accent-color: #c89b3c; }
+.level-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #c89b3c var(--fill, 0%), #2a2f3a var(--fill, 0%));
+  outline: none;
+  cursor: pointer;
+}
+.level-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #c89b3c;
+  border: 2px solid #0d1117;
+  cursor: pointer;
+}
+.level-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #c89b3c;
+  border: 2px solid #0d1117;
+  cursor: pointer;
+}
 
 .level-value {
   background: #1e2330;
@@ -258,6 +284,16 @@ input { font-family: inherit; }
 .rank-value { font-size: 13px; color: #c8cdd3; min-width: 14px; text-align: center; }
 .ability-label { font-size: 10px; color: #5a6270; margin-top: 2px; }
 
+.items-grid-header { display: flex; justify-content: flex-end; min-height: 20px; margin-bottom: 4px; }
+.clear-items-btn {
+  background: none;
+  border: none;
+  color: #5a6270;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+.clear-items-btn:hover { color: #e74c3c; }
 .items-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 
 .item-slot {

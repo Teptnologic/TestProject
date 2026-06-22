@@ -16,7 +16,7 @@ export const MULTI_CAST = {
     ],
     R: [
       { castKey: 'R1', label: 'R1', name: 'R1: Perfect Execution', calcName: 'Cast1Damage' },
-      { castKey: 'R2', label: 'R2', name: 'R2: Perfect Execution', calcName: 'Cast2DamageMax' },
+      { castKey: 'R2', label: 'R2', name: 'R2: Perfect Execution', calcName: 'Cast2DamageMin', execute: { maxMultiplier: 3, threshold: 0.3 } },
     ],
   },
   Ahri: {
@@ -43,8 +43,8 @@ export const MULTI_CAST = {
   },
   Jhin: {
     R: [
-      { castKey: 'R1', label: 'R', name: 'Curtain Call (1 shot)', calcName: 'DamageCalc' },
-      { castKey: 'R4', label: 'R4', name: 'Curtain Call (4th shot, 2×)', calcName: 'DamageCalc', multiplier: 2 },
+      { castKey: 'R1', label: 'R', name: 'Curtain Call (1 shot)', calcName: 'DamageCalc', execute: { maxMultiplier: 4, threshold: 1.0 } },
+      { castKey: 'R4', label: 'R4', name: 'Curtain Call (4th shot, 2×)', calcName: 'DamageCalc', multiplier: 2, execute: { maxMultiplier: 4, threshold: 1.0 } },
     ],
   },
 };

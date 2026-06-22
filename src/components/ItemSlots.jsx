@@ -97,6 +97,16 @@ export default function ItemSlots({ build, setBuild }) {
 
   return (
     <>
+      <div className="items-grid-header">
+        {slots.some(Boolean) && (
+          <button
+            className="clear-items-btn"
+            onClick={() => setBuild((b) => ({ ...b, items: Array(b.items.length).fill(null) }))}
+          >
+            Clear All
+          </button>
+        )}
+      </div>
       <div className="items-grid">
         {slots.map((id, idx) => {
           const item = id ? getItem(id) : null;
