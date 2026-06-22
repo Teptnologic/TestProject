@@ -444,19 +444,25 @@ function statValue(attacker, statName) {
 }
 
 // Evaluate a single calculation at the given ability rank + attacker stats
+function dvIndex(arr, rank) {
+  const r = rank || 1;
+  // Some arrays are 1-indexed with a dummy 0 at index 0 (e.g. Akali R BaseDamage)
+  if (arr.length >= 2 && arr[0] === 0 && arr[1] !== 0) return Math.min(r, arr.length - 1);
+  return Math.min(r - 1, arr.length - 1);
+}
+
 export function evaluateCalc(calc, rank, attacker, charLevel) {
-  const dvIdx = Math.max(0, (rank || 1) - 1);
   let total = 0;
   for (const part of calc.parts) {
     switch (part.kind) {
       case 'dataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        if (arr) total += arr[dvIdx] ?? 0;
+        if (arr) total += arr[dvIndex(arr, rank)] ?? 0;
         break;
       }
       case 'statByDataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        const ratio = arr ? arr[dvIdx] ?? 0 : 0;
+        const ratio = arr ? arr[dvIndex(arr, rank)] ?? 0 : 0;
         total += statValue(attacker, part.stat) * ratio;
         break;
       }

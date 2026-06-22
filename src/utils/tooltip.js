@@ -49,10 +49,16 @@ function dataValueIndex(rank) {
   return Math.max(0, (rank || 1) - 1);
 }
 
+function dvIndex(arr, rank) {
+  const r = rank || 1;
+  if (arr.length >= 2 && arr[0] === 0 && arr[1] !== 0) return Math.min(r, arr.length - 1);
+  return Math.min(r - 1, arr.length - 1);
+}
+
 function lookupDataValue(ability, key, rank) {
-  const idx = dataValueIndex(rank);
   for (const [name, values] of Object.entries(ability.dataValues || {})) {
     if (name.toLowerCase() !== key.toLowerCase()) continue;
+    const idx = dvIndex(values, rank);
     const v = values[idx] ?? values[values.length - 1];
     return formatValue(v, key);
   }
@@ -138,12 +144,13 @@ export function formatItemTooltip(item) {
 
 function evaluateSubPart(part, dataValues, rank, charLevel) {
   if (!part) return 0;
-  const idx = dataValueIndex(rank);
   const lvl = charLevel || 1;
   switch (part.kind) {
     case 'dataValue': {
       const arr = dataValues?.[part.name];
-      return arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
+      if (!arr) return 0;
+      if (!Array.isArray(arr)) return arr;
+      return arr[dvIndex(arr, rank)] ?? arr[arr.length - 1];
     }
     case 'byCharLevel': {
       const vidx = Math.max(0, Math.min(lvl, (part.values?.length || 1) - 1));
@@ -176,14 +183,13 @@ function evaluateSubPart(part, dataValues, rank, charLevel) {
 
 function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
   if (!calc?.parts?.length) return null;
-  const idx = dataValueIndex(rank);
   const segments = [];
 
   for (const part of calc.parts) {
     switch (part.kind) {
       case 'dataValue': {
         const arr = dataValues?.[part.name];
-        const val = arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
+        const val = arr ? (Array.isArray(arr) ? (arr[dvIndex(arr, rank)] ?? arr[arr.length - 1]) : arr) : 0;
         if (val === 0) continue;
         const isPercent = /percent|ratio|hpdamage/i.test(part.name) || (val > 0 && val < 1);
         const hpBased = /hp|health/i.test(part.name);
@@ -196,7 +202,7 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
       }
       case 'statByDataValue': {
         const arr = dataValues?.[part.name];
-        const ratio = arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
+        const ratio = arr ? (Array.isArray(arr) ? (arr[dvIndex(arr, rank)] ?? arr[arr.length - 1]) : arr) : 0;
         if (ratio === 0) continue;
         const statLabel = STAT_DISPLAY[part.stat] || part.stat;
         const isPercent = ratio > 0 && ratio <= 5;
