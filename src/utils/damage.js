@@ -26,15 +26,15 @@ const CHAMPION_AA = {
         ability: 'W',
         every: 3,
         damageType: 'true',
-        maxHpRatio: [0, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11],
-        minDamage: [0, 35, 50, 65, 80, 95, 110, 125],
+        maxHpRatio: [0, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11],
+        minDamage: [0, 50, 65, 80, 95, 110, 125],
         label: 'Silver Bolts',
       },
       {
         type: 'empoweredAA',
         triggerStep: 'Q',
         damageType: 'physical',
-        totalAdRatio: [0, 0.65, 0.75, 0.85, 0.95, 1.05, 1.15, 1.25],
+        totalAdRatio: [0, 0.75, 0.85, 0.95, 1.05, 1.15, 1.25],
         label: 'Tumble',
       },
     ],
@@ -444,11 +444,9 @@ function statValue(attacker, statName) {
 }
 
 // Evaluate a single calculation at the given ability rank + attacker stats
-function dvIndex(arr, rank) {
-  const r = rank || 1;
-  // Some arrays are 1-indexed with a dummy 0 at index 0 (e.g. Akali R BaseDamage)
-  if (arr.length >= 2 && arr[0] === 0 && arr[1] !== 0) return Math.min(r, arr.length - 1);
-  return Math.min(r - 1, arr.length - 1);
+// DataValue arrays are 1-indexed: index 0 is unused, index 1 = rank 1
+function dvIndex(rank) {
+  return Math.max(1, rank || 1);
 }
 
 export function evaluateCalc(calc, rank, attacker, charLevel) {
@@ -457,12 +455,12 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
     switch (part.kind) {
       case 'dataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        if (arr) total += arr[dvIndex(arr, rank)] ?? 0;
+        if (arr) total += arr[dvIndex(rank)] ?? 0;
         break;
       }
       case 'statByDataValue': {
         const arr = attacker.spellDataValues?.[part.name];
-        const ratio = arr ? arr[dvIndex(arr, rank)] ?? 0 : 0;
+        const ratio = arr ? arr[dvIndex(rank)] ?? 0 : 0;
         total += statValue(attacker, part.stat) * ratio;
         break;
       }

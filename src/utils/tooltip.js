@@ -45,20 +45,15 @@ function formatValue(value, key) {
   return value.toFixed(1).replace(/\.0$/, '');
 }
 
+// DataValue arrays are 1-indexed: index 0 is unused, index 1 = rank 1
 function dataValueIndex(rank) {
-  return Math.max(0, (rank || 1) - 1);
-}
-
-function dvIndex(arr, rank) {
-  const r = rank || 1;
-  if (arr.length >= 2 && arr[0] === 0 && arr[1] !== 0) return Math.min(r, arr.length - 1);
-  return Math.min(r - 1, arr.length - 1);
+  return Math.max(1, rank || 1);
 }
 
 function lookupDataValue(ability, key, rank) {
+  const idx = dataValueIndex(rank);
   for (const [name, values] of Object.entries(ability.dataValues || {})) {
     if (name.toLowerCase() !== key.toLowerCase()) continue;
-    const idx = dvIndex(values, rank);
     const v = values[idx] ?? values[values.length - 1];
     return formatValue(v, key);
   }
@@ -78,14 +73,14 @@ function lookupCalculation(ability, key, rank, attacker, charLevel) {
 function lookupEffect(ability, key, rank) {
   const m = key.match(/^e(\d+)$/i);
   if (!m || !ability.effect) return null;
-  const idx = dataValueIndex(rank);
+  const idx = dataValueIndex(rank) - 1;
   const arr = ability.effect[parseInt(m[1], 10)];
   if (!Array.isArray(arr)) return null;
   return formatValue(arr[idx] ?? arr[arr.length - 1], key);
 }
 
 function lookupStandard(ability, key, rank) {
-  const idx = dataValueIndex(rank);
+  const idx = dataValueIndex(rank) - 1;
   const k = key.toLowerCase();
   if (k === 'cooldown' && ability.cooldown) {
     return formatValue(ability.cooldown[idx] ?? ability.cooldown.at(-1), key);
@@ -150,7 +145,8 @@ function evaluateSubPart(part, dataValues, rank, charLevel) {
       const arr = dataValues?.[part.name];
       if (!arr) return 0;
       if (!Array.isArray(arr)) return arr;
-      return arr[dvIndex(arr, rank)] ?? arr[arr.length - 1];
+      const idx = dataValueIndex(rank);
+      return arr[idx] ?? arr[arr.length - 1];
     }
     case 'byCharLevel': {
       const vidx = Math.max(0, Math.min(lvl, (part.values?.length || 1) - 1));
@@ -185,11 +181,13 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
   if (!calc?.parts?.length) return null;
   const segments = [];
 
+  const idx = dataValueIndex(rank);
+
   for (const part of calc.parts) {
     switch (part.kind) {
       case 'dataValue': {
         const arr = dataValues?.[part.name];
-        const val = arr ? (Array.isArray(arr) ? (arr[dvIndex(arr, rank)] ?? arr[arr.length - 1]) : arr) : 0;
+        const val = arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
         if (val === 0) continue;
         const isPercent = /percent|ratio|hpdamage/i.test(part.name) || (val > 0 && val < 1);
         const hpBased = /hp|health/i.test(part.name);
@@ -202,7 +200,7 @@ function describeCalcParts(calc, dataValues, rank, attacker, charLevel) {
       }
       case 'statByDataValue': {
         const arr = dataValues?.[part.name];
-        const ratio = arr ? (Array.isArray(arr) ? (arr[dvIndex(arr, rank)] ?? arr[arr.length - 1]) : arr) : 0;
+        const ratio = arr ? (Array.isArray(arr) ? (arr[idx] ?? arr[arr.length - 1]) : arr) : 0;
         if (ratio === 0) continue;
         const statLabel = STAT_DISPLAY[part.stat] || part.stat;
         const isPercent = ratio > 0 && ratio <= 5;
