@@ -10,7 +10,7 @@ import TargetPanel from './components/TargetPanel';
 import ComboPanel from './components/ComboPanel';
 import DamagePanel from './components/DamagePanel';
 import LandingPage from './components/LandingPage';
-import AdBanner from './components/AdBanner';
+
 
 import './App.css';
 
@@ -200,9 +200,6 @@ export default function App() {
             )}
           </div>
 
-          <aside className="ad-sidebar-left">
-            <AdBanner slot="6142626696" label="Champion Page Left" />
-          </aside>
           <main className="main-grid">
             <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
             <TargetPanel target={target} setTarget={setTarget} />
