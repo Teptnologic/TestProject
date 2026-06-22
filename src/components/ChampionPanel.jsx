@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
 import { championList } from '../data';
+import { COMBO_TEMPLATES } from '../data/combo-templates';
 import meta from '../data/generated/meta.json';
 import AbilityRow from './AbilityRow';
 import ItemSlots from './ItemSlots';
 import StatsDisplay from './StatsDisplay';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
+const SUPPORTED = new Set(Object.keys(COMBO_TEMPLATES));
 
 export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
   const [query, setQuery] = useState('');
@@ -14,7 +16,9 @@ export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
   const filtered = useMemo(() => {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
-    return championList.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
+    return championList
+      .filter((c) => SUPPORTED.has(c.id) && c.name.toLowerCase().includes(q))
+      .slice(0, 8);
   }, [query]);
 
   function selectChamp(c) {
