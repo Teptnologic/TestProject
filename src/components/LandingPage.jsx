@@ -8,13 +8,24 @@ const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img
 const SUPPORTED = Object.keys(COMBO_TEMPLATES);
 const DISCORD_URL = 'https://discord.gg/qw3xeUfN48';
 
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
 function AdBanner() {
   const pushed = useRef(false);
   useEffect(() => {
-    if (pushed.current) return;
+    if (IS_LOCAL || pushed.current) return;
     pushed.current = true;
     try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* noop */ }
   }, []);
+
+  if (IS_LOCAL) {
+    return (
+      <div style={{ margin: '24px 0', background: '#1a3a5c', border: '2px dashed #3b82f6', borderRadius: 8, padding: '24px', textAlign: 'center', color: '#60a5fa', fontSize: 14 }}>
+        Ad Banner Placeholder (only visible on localhost)
+      </div>
+    );
+  }
+
   return (
     <div style={{ margin: '24px 0' }}>
       <ins
