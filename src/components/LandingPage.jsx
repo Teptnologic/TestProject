@@ -4,7 +4,7 @@ import meta from '../data/generated/meta.json';
 
 const DDRAGON_IMG = `https://ddragon.leagueoflegends.com/cdn/${meta.version}/img`;
 const SUPPORTED = Object.keys(COMBO_TEMPLATES);
-const DISCORD_URL = 'https://discord.gg/YOUR_INVITE_CODE';
+const DISCORD_URL = 'https://discord.gg/u9XqGMpaXS';
 
 export default function LandingPage({ onSelect }) {
   const supported = SUPPORTED.map((id) => championList.find((c) => c.id === id)).filter(Boolean);
