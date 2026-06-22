@@ -106,6 +106,16 @@ export default function App() {
     const champion = build.championId ? getChampion(build.championId) : null;
     const items = resolveItems(build.items);
     const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks) : null;
+    if (champion) {
+      console.group(`[Boris] ${champion.name} (${champion.id})`);
+      console.log('Base Stats:', champion.stats);
+      console.log('Computed Stats:', stats);
+      console.log('Ranks:', build.ranks);
+      console.log('Level:', build.level);
+      console.log('Items:', items);
+      console.log('Abilities:', champion.abilities);
+      console.groupEnd();
+    }
     return { ...build, champion, items, stats };
   }), [builds]);
 
