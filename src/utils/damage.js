@@ -18,6 +18,11 @@ const CHAMPION_AA = {
       ],
     },
   },
+  Akali: {
+    // Assassin's Mark: damaging an enemy with an ability marks them;
+    // the next AA within window consumes the mark for bonus magic damage.
+    autoPassiveAfterAbility: true,
+  },
   Vayne: {
     appliesStacks: ['E'],
     onHits: [
@@ -581,6 +586,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let aaCount = 0;
   let hitCount = 0; // consecutive hits on target (for Vayne W)
   let empowered = null; // ability key that empowers next AA (for Vayne Q)
+  let passiveMarked = false; // for Akali: ability cast marks target, next AA procs passive
   const targetMaxHP = (target.hp || 0) + (target.shield || 0);
   let targetCurrentHP = targetMaxHP;
 
@@ -613,6 +619,19 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       if (lastWasSpell) {
         const sb = computeSpellbladeDamage(activeStats, items);
         if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
+      }
+      // Akali passive: AA after an ability consumes the mark for bonus magic damage
+      if (passiveMarked && CHAMPION_AA[champId]?.autoPassiveAfterAbility) {
+        const passive = champion.abilities.find((a) => a.key === 'P');
+        if (passive) {
+          const pResult = computeAbilityDamage(passive, 1, activeStats, charLevel, null);
+          if (pResult && pResult.raw) {
+            pResult.abilityKey = 'P';
+            pResult.abilityName = passive.name;
+            addDmg(pResult);
+          }
+        }
+        passiveMarked = false;
       }
       lastWasSpell = false;
       continue;
@@ -714,6 +733,10 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
     }
 
     lastWasSpell = true;
+    // Akali: damaging abilities mark the target for the next AA
+    if (CHAMPION_AA[champId]?.autoPassiveAfterAbility && baseKey !== 'P') {
+      passiveMarked = true;
+    }
   }
 
   return {
