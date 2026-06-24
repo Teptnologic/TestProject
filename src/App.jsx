@@ -10,6 +10,7 @@ import TargetPanel from './components/TargetPanel';
 import ComboPanel from './components/ComboPanel';
 import DamagePanel from './components/DamagePanel';
 import LandingPage from './components/LandingPage';
+import AdBanner from './components/AdBanner';
 
 
 import './App.css';
@@ -177,36 +178,41 @@ export default function App() {
       {showLanding ? (
         <LandingPage onSelect={selectFromLanding} />
       ) : (
-        <>
-          <div className="build-tabs">
-            {builds.map((_, i) => (
-              <button
-                key={i}
-                className={`build-tab ${i === activeBuildIdx ? 'active' : ''}`}
-                onClick={() => setActiveBuildIdx(i)}
-              >
-                <span className={`build-tab-dot ${resolvedBuilds[i]?.champion ? 'has-champ' : ''}`} />
-                Build {String.fromCharCode(65 + i)}
-                {resolvedBuilds[i]?.champion && (
-                  <span className="build-tab-champ">{resolvedBuilds[i].champion.name}</span>
-                )}
-                {builds.length > 1 && (
-                  <span className="build-tab-close" onClick={(e) => { e.stopPropagation(); removeBuild(i); }}>×</span>
-                )}
-              </button>
-            ))}
-            {builds.length < 2 && (
-              <button className="build-tab add" onClick={addBuild}>+ Compare</button>
-            )}
-          </div>
+        <div className="detail-layout">
+          <aside className="ad-sidebar-left">
+            <AdBanner slot="6142626696" label="Champion Page Left" />
+          </aside>
+          <div className="detail-content">
+            <div className="build-tabs">
+              {builds.map((_, i) => (
+                <button
+                  key={i}
+                  className={`build-tab ${i === activeBuildIdx ? 'active' : ''}`}
+                  onClick={() => setActiveBuildIdx(i)}
+                >
+                  <span className={`build-tab-dot ${resolvedBuilds[i]?.champion ? 'has-champ' : ''}`} />
+                  Build {String.fromCharCode(65 + i)}
+                  {resolvedBuilds[i]?.champion && (
+                    <span className="build-tab-champ">{resolvedBuilds[i].champion.name}</span>
+                  )}
+                  {builds.length > 1 && (
+                    <span className="build-tab-close" onClick={(e) => { e.stopPropagation(); removeBuild(i); }}>×</span>
+                  )}
+                </button>
+              ))}
+              {builds.length < 2 && (
+                <button className="build-tab add" onClick={addBuild}>+ Compare</button>
+              )}
+            </div>
 
-          <main className="main-grid">
-            <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
-            <TargetPanel target={target} setTarget={setTarget} />
-            <ComboPanel build={fullBuild} setCombo={setCombo} />
-            <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
-          </main>
-        </>
+            <main className="main-grid">
+              <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
+              <TargetPanel target={target} setTarget={setTarget} />
+              <ComboPanel build={fullBuild} setCombo={setCombo} />
+              <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
+            </main>
+          </div>
+        </div>
       )}
     </>
   );
