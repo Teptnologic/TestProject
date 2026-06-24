@@ -393,7 +393,8 @@ function computeItemProcs(attacker, items, target, abilityKey) {
     }
 
     // General proc items (Luden's, Stormsurge, etc.)
-    if (bin.calculations) {
+    // Skip items with an active ability — those are added manually via ITEM_ combo steps
+    if (bin.calculations && !item._overrides?.active) {
       const found = pickItemDamageCalc(bin.calculations);
       if (!found) continue;
 
