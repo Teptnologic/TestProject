@@ -55,15 +55,20 @@ input { font-family: inherit; }
 
 .detail-layout {
   display: flex;
+  align-items: stretch;
 }
 
 .ad-sidebar-left {
   width: 160px;
   flex-shrink: 0;
   background: #0a0d13;
-  min-height: calc(100vh - 56px);
-  padding: 16px 8px;
   border-right: 1px solid #2a2f3a;
+  padding: 16px 8px;
+}
+
+.detail-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .main-grid {
@@ -71,8 +76,6 @@ input { font-family: inherit; }
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 20px;
-  flex: 1;
-  min-width: 0;
   max-width: 1400px;
   margin: 0 auto;
 }

@@ -393,7 +393,8 @@ function computeItemProcs(attacker, items, target, abilityKey) {
     }
 
     // General proc items (Luden's, Stormsurge, etc.)
-    if (bin.calculations) {
+    // Skip items with an active ability — those are added manually via ITEM_ combo steps
+    if (bin.calculations && !item._overrides?.active) {
       const found = pickItemDamageCalc(bin.calculations);
       if (!found) continue;
 
@@ -584,13 +585,45 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   const targetMaxHP = (target.hp || 0) + (target.shield || 0);
   let targetCurrentHP = targetMaxHP;
 
+  // Stacking resistance shred / damage amp from items
+  let cleaverStacks = 0, cleaverMax = 0, cleaverPer = 0;
+  let bloodletterStacks = 0, bloodletterMax = 0, bloodletterPer = 0;
+  let abyssalAmp = 0;
+  for (const item of items || []) {
+    const p = item?._overrides?.passive;
+    if (!p) continue;
+    if (p.type === 'blackCleaver') { cleaverMax = p.maxStacks; cleaverPer = p.armorReductionPerStack; }
+    if (p.type === 'bloodlettersCurse') { bloodletterMax = p.maxStacks; bloodletterPer = p.mrReductionPerStack; }
+    if (p.type === 'abyssalMask') { abyssalAmp = p.magicDamageAmp; }
+  }
+
+  function effectiveTarget() {
+    const armorShred = cleaverStacks * cleaverPer;
+    const mrShred = bloodletterStacks * bloodletterPer;
+    return {
+      ...target,
+      armor: (target.armor || 0) * (1 - armorShred),
+      spellblock: (target.spellblock || 0) * (1 - mrShred),
+    };
+  }
+
   function addDmg(result) {
-    const post = applyResistance(result.raw, result.type, target, activeStats);
+    let raw = result.raw;
+    if (result.type === 'magic' && abyssalAmp > 0) raw *= (1 + abyssalAmp);
+    const et = effectiveTarget();
+    const post = applyResistance(raw, result.type, et, activeStats);
     if (result.type === 'physical') totalPhys += post;
     else if (result.type === 'true') totalTrue += post;
     else totalMagic += post;
-    steps.push({ ...result, post });
+    steps.push({ ...result, raw, post });
     targetCurrentHP = Math.max(0, targetCurrentHP - post);
+    // Apply stacking shred after damage
+    if (result.type === 'physical' && cleaverMax > 0) {
+      cleaverStacks = Math.min(cleaverMax, cleaverStacks + 1);
+    }
+    if (result.type === 'magic' && bloodletterMax > 0) {
+      bloodletterStacks = Math.min(bloodletterMax, bloodletterStacks + 1);
+    }
   }
 
   const champId = champion?.id;

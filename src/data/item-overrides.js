@@ -334,8 +334,20 @@ export const ITEM_OVERRIDES = {
   6665: { // Jak'Sho, The Protean
     abilityHaste: 10,
   },
-  3001: { // Abyssal Mask
-    abilityHaste: 10,
+  8020: { // Abyssal Mask
+    abilityHaste: 15,
+    passive: {
+      type: 'abyssalMask',
+      magicDamageAmp: 0.12,
+    },
+  },
+  8010: { // Bloodletter's Curse
+    abilityHaste: 15,
+    passive: {
+      type: 'bloodlettersCurse',
+      maxStacks: 4,
+      mrReductionPerStack: 0.075,
+    },
   },
   2065: { // Shurelya's Battlesong
     abilityHaste: 20,

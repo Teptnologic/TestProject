@@ -272,9 +272,10 @@ function normalizeItemBin(binEntry) {
   return Object.keys(result).length ? result : null;
 }
 
-// Build enriched item index with bin data
+// Build enriched item index with bin data (exclude Arena/game-mode variants with 6-digit IDs)
 const itemIndex = {};
 for (const item of items) {
+  if (item.id >= 100000) continue;
   const binEntry = itemBinData?.[String(item.id)];
   const bin = normalizeItemBin(binEntry);
   itemIndex[item.id] = bin ? { ...item, bin } : item;
