@@ -8,7 +8,7 @@ const OUT_DIR = join(__dirname, '..', 'src', 'data', 'generated');
 
 const DDRAGON = 'https://ddragon.leagueoflegends.com';
 const CDRAGON = 'https://raw.communitydragon.org/latest';
-const LOL_WIKI = 'https://leagueoflegends.fandom.com';
+const LOL_WIKI = 'https://wiki.leagueoflegends.com';
 
 async function fetchJSON(url) {
   const res = await fetch(url);
@@ -388,6 +388,9 @@ const WIKI_STAT_MAP = {
 // The Lua structure is: return { ["ChampionName"] = { ... stats = { ... } ... }, ... }
 function parseLuaChampionData(lua) {
   const map = {};
+
+  console.log(`  Lua source length: ${lua.length} chars`);
+  console.log(`  Lua preview: ${lua.slice(0, 500).replace(/\n/g, '\\n')}`);
 
   // Match each champion block: ["Name"] = { ... }
   // We look for the stats sub-table within each champion block
