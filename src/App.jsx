@@ -62,6 +62,7 @@ export default function App() {
   const [builds, setBuilds] = useState(initial.builds);
   const [activeBuildIdx, setActiveBuildIdx] = useState(0);
   const [combo, setCombo] = useState(initial.combo);
+  const [comboB, setComboB] = useState([]);
   const [target, setTarget] = useState(initial.target);
   const [copied, setCopied] = useState(false);
 
@@ -149,12 +150,26 @@ export default function App() {
     return { ...build, champion, items, stats };
   }), [builds]);
 
-  const damageResults = useMemo(() => resolvedBuilds.map((rb) => {
-    if (!rb.champion || !rb.stats || !combo.length) return null;
-    return computeCombo(combo, rb.champion, rb.ranks, rb.stats, target, rb.level, rb.items);
-  }), [resolvedBuilds, combo, target]);
+  // Build B uses its own combo when champions differ; otherwise both share `combo`.
+  const sameChamp = !!builds[0]?.championId
+    && !!builds[1]?.championId
+    && builds[0].championId === builds[1].championId;
+  const buildBCombo = sameChamp ? combo : comboB;
+
+  const damageResults = useMemo(() => resolvedBuilds.map((rb, idx) => {
+    if (!rb.champion || !rb.stats) return null;
+    const c = idx === 0 ? combo : buildBCombo;
+    if (!c.length) return null;
+    return computeCombo(c, rb.champion, rb.ranks, rb.stats, target, rb.level, rb.items);
+  }), [resolvedBuilds, combo, buildBCombo, target]);
 
   const activeBuild = resolvedBuilds[activeBuildIdx] || resolvedBuilds[0];
+  const activeCombo = activeBuildIdx === 0 ? combo : buildBCombo;
+
+  function setActiveCombo(updater) {
+    if (activeBuildIdx === 0 || sameChamp) setCombo(updater);
+    else setComboB(updater);
+  }
 
   function setActiveBuild(updater) {
     setBuilds((prev) => {
@@ -176,7 +191,7 @@ export default function App() {
     setActiveBuildIdx(0);
   }
 
-  const fullBuild = { ...activeBuild, combo };
+  const fullBuild = { ...activeBuild, combo: activeCombo };
 
   function selectFromLanding(champId) {
     setBuilds((prev) => {
@@ -234,10 +249,10 @@ export default function App() {
             </div>
 
             <main className="main-grid">
-              <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setCombo} />
+              <ChampionPanel build={fullBuild} setBuild={setActiveBuild} stats={activeBuild.stats} setCombo={setActiveCombo} />
               <TargetPanel target={target} setTarget={setTarget} />
-              <ComboPanel build={fullBuild} setCombo={setCombo} />
-              <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={combo} />
+              <ComboPanel build={fullBuild} setCombo={setActiveCombo} />
+              <DamagePanel results={damageResults} builds={resolvedBuilds} target={target} combo={activeCombo} />
             </main>
           </div>
         </div>
