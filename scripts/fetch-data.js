@@ -327,9 +327,11 @@ async function fetchWikiChampionStats() {
   ];
 
   let data = null;
+  let usedUrl = '';
   for (const url of urls) {
     try {
       data = await fetchJSON(url);
+      usedUrl = url;
       if (data?.query?.pages) break;
     } catch {
       continue;
@@ -337,10 +339,24 @@ async function fetchWikiChampionStats() {
   }
   if (!data?.query?.pages) throw new Error('All wiki API paths failed');
 
+  console.log(`  Wiki API responded from: ${usedUrl}`);
   const page = Object.values(data.query.pages)[0];
+
+  // Debug: show what keys the response has so we can find the content
+  const rev = page?.revisions?.[0];
+  if (rev) {
+    console.log(`  Revision keys: ${Object.keys(rev).join(', ')}`);
+    if (rev.slots) console.log(`  Slot keys: ${Object.keys(rev.slots).join(', ')}`);
+  } else {
+    console.log(`  Page keys: ${Object.keys(page || {}).join(', ')}`);
+    console.log(`  Page snippet: ${JSON.stringify(page).slice(0, 300)}`);
+  }
+
   // rvslots=main wraps content in slots.main.content; legacy puts it in revisions[0]['*']
-  const lua = page?.revisions?.[0]?.slots?.main?.content
-    || page?.revisions?.[0]?.['*'];
+  const lua = rev?.slots?.main?.content
+    || rev?.slots?.main?.['*']
+    || rev?.['*']
+    || rev?.content;
   if (!lua) throw new Error('Could not extract Lua source from wiki response');
 
   return parseLuaChampionData(lua);
