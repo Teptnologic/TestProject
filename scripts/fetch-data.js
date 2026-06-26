@@ -317,14 +317,30 @@ async function fetchItemBinData(itemIds) {
 // The wiki stores stats in Lua, not Cargo tables. We fetch the raw source
 // via the MediaWiki API and parse the Lua table into JS objects.
 async function fetchWikiChampionStats() {
-  const url = `${LOL_WIKI}/en-us/api.php?action=query&prop=revisions&rvprop=content&titles=Module:ChampionData/data&format=json`;
-  const data = await fetchJSON(url);
+  // Weird Gloop wiki — try multiple API paths since the locale prefix varies
+  const params = 'action=query&prop=revisions&rvprop=content&rvslots=main&titles=Module:ChampionData/data&format=json';
+  const urls = [
+    `${LOL_WIKI}/en-us/api.php?${params}`,
+    `${LOL_WIKI}/en-us/w/api.php?${params}`,
+    `${LOL_WIKI}/api.php?${params}`,
+    `${LOL_WIKI}/w/api.php?${params}`,
+  ];
 
-  // MediaWiki wraps pages in { query: { pages: { <id>: { revisions: [...] } } } }
-  const pages = data?.query?.pages;
-  if (!pages) throw new Error('Unexpected wiki API response structure');
-  const page = Object.values(pages)[0];
-  const lua = page?.revisions?.[0]?.['*'];
+  let data = null;
+  for (const url of urls) {
+    try {
+      data = await fetchJSON(url);
+      if (data?.query?.pages) break;
+    } catch {
+      continue;
+    }
+  }
+  if (!data?.query?.pages) throw new Error('All wiki API paths failed');
+
+  const page = Object.values(data.query.pages)[0];
+  // rvslots=main wraps content in slots.main.content; legacy puts it in revisions[0]['*']
+  const lua = page?.revisions?.[0]?.slots?.main?.content
+    || page?.revisions?.[0]?.['*'];
   if (!lua) throw new Error('Could not extract Lua source from wiki response');
 
   return parseLuaChampionData(lua);
