@@ -56,6 +56,7 @@ export function encodeShareUrl(builds, combo, target) {
     if (a.ranks) q.set('r', encRanks(a.ranks));
     if ((a.items || []).some(Boolean)) q.set('i', encItems(a.items));
     if (a.adaptiveForce) q.set('af', a.adaptiveForce);
+    if (a.adaptiveType && a.adaptiveType !== 'auto') q.set('at', a.adaptiveType);
   }
 
   const b = builds[1];
@@ -65,6 +66,7 @@ export function encodeShareUrl(builds, combo, target) {
     if (b.ranks) q.set('br', encRanks(b.ranks));
     if ((b.items || []).some(Boolean)) q.set('bi', encItems(b.items));
     if (b.adaptiveForce) q.set('baf', b.adaptiveForce);
+    if (b.adaptiveType && b.adaptiveType !== 'auto') q.set('bat', b.adaptiveType);
   }
 
   if (combo && combo.length) q.set('combo', combo.join('-'));
@@ -87,6 +89,7 @@ export function decodeShareUrl(pathname, search) {
   if (q.has('r')) buildA.ranks = decRanks(q.get('r'));
   if (q.has('i')) buildA.items = decItems(q.get('i'));
   if (q.has('af')) buildA.adaptiveForce = parseInt(q.get('af'), 10) || 0;
+  if (q.has('at')) buildA.adaptiveType = q.get('at');
 
   const builds = [buildA];
 
@@ -98,6 +101,7 @@ export function decodeShareUrl(pathname, search) {
     if (q.has('br')) buildB.ranks = decRanks(q.get('br'));
     if (q.has('bi')) buildB.items = decItems(q.get('bi'));
     if (q.has('baf')) buildB.adaptiveForce = parseInt(q.get('baf'), 10) || 0;
+    if (q.has('bat')) buildB.adaptiveType = q.get('bat');
     builds.push(buildB);
   }
 

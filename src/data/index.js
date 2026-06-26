@@ -211,7 +211,7 @@ function normalizeChampion(meta) {
     name: meta.name,
     title: meta.title,
     tags: meta.tags,
-    stats: meta.stats,
+    stats: { ...meta.stats, ...detail.ddragon?.stats },
     abilities,
     recastAbilities,
     passive: detail.ddragon?.passive,

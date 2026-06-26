@@ -44,7 +44,7 @@ const ITEM_STAT_MAP = {
   FlatHPRegenMod: 'hpregen',
 };
 
-export function totalStats(champStats, level, items, championId, ranks, adaptiveForce) {
+export function totalStats(champStats, level, items, championId, ranks, adaptiveForce, adaptiveType) {
   const base = baseStatsAtLevel(champStats, level);
   const bonus = { hp: 0, mp: 0, armor: 0, spellblock: 0, attackdamage: 0, ap: 0, crit: 0 };
   let asPct = 0;
@@ -93,7 +93,7 @@ export function totalStats(champStats, level, items, championId, ranks, adaptive
   // Adaptive force from rune shards: each shard = +5.4 AD or +9 AP
   const afShards = adaptiveForce || 0;
   if (afShards > 0) {
-    const isAP = bonus.ap > bonus.attackdamage;
+    const isAP = adaptiveType === 'ap' || (adaptiveType !== 'ad' && bonus.ap > bonus.attackdamage);
     if (isAP) bonus.ap += afShards * 9;
     else bonus.attackdamage += afShards * 5.4;
   }

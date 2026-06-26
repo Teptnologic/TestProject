@@ -107,7 +107,7 @@ export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
 
             <div className="section-label">Runes</div>
             <div className="rune-adaptive">
-              <span className="rune-adaptive-label">Adaptive Force</span>
+              <span className="rune-adaptive-label">Adaptive</span>
               <div className="rune-shard-btns">
                 {[0, 1, 2].map((n) => (
                   <button
@@ -120,9 +120,27 @@ export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
                 ))}
               </div>
               {(build.adaptiveForce || 0) > 0 && (
-                <span className="rune-adaptive-hint">
-                  +{stats?.ap > (stats?.bonusAD || 0) ? `${(build.adaptiveForce || 0) * 9} AP` : `${((build.adaptiveForce || 0) * 5.4).toFixed(1)} AD`}
-                </span>
+                <>
+                  <div className="rune-type-btns">
+                    {['auto', 'ap', 'ad'].map((t) => (
+                      <button
+                        key={t}
+                        className={`rune-type-btn ${(build.adaptiveType || 'auto') === t ? 'active' : ''}`}
+                        onClick={() => setBuild((b) => ({ ...b, adaptiveType: t }))}
+                      >
+                        {t === 'auto' ? 'Auto' : t.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="rune-adaptive-hint">
+                    {(() => {
+                      const type = build.adaptiveType || 'auto';
+                      const isAP = type === 'ap' || (type !== 'ad' && (stats?.ap || 0) > (stats?.bonusAD || 0));
+                      const n = build.adaptiveForce || 0;
+                      return isAP ? `+${n * 9} AP` : `+${(n * 5.4).toFixed(1)} AD`;
+                    })()}
+                  </span>
+                </>
               )}
             </div>
 

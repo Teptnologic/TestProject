@@ -40,6 +40,7 @@ async function fetchChampionDetail(version, championId) {
   return {
     id: champ.id,
     name: champ.name,
+    stats: champ.stats,
     passive: {
       name: champ.passive.name,
       description: champ.passive.description,
