@@ -90,12 +90,12 @@ export function totalStats(champStats, level, items, championId, ranks, adaptive
     }
   }
 
-  // Adaptive force from rune shards: each shard = +9 AD or +9 AP
+  // Adaptive force from rune shards: each shard = +5.4 AD or +9 AP
   const afShards = adaptiveForce || 0;
   if (afShards > 0) {
     const isAP = bonus.ap > bonus.attackdamage;
     if (isAP) bonus.ap += afShards * 9;
-    else bonus.attackdamage += afShards * 9;
+    else bonus.attackdamage += afShards * 5.4;
   }
 
   let ap = bonus.ap;

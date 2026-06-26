@@ -121,7 +121,7 @@ export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
               </div>
               {(build.adaptiveForce || 0) > 0 && (
                 <span className="rune-adaptive-hint">
-                  +{(build.adaptiveForce || 0) * 9} {stats?.ap > (stats?.bonusAD || 0) ? 'AP' : 'AD'}
+                  +{stats?.ap > (stats?.bonusAD || 0) ? `${(build.adaptiveForce || 0) * 9} AP` : `${((build.adaptiveForce || 0) * 5.4).toFixed(1)} AD`}
                 </span>
               )}
             </div>
