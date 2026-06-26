@@ -7,7 +7,8 @@
 //   lvl   Build A level            r   Build A ranks  "Q-W-E-R"
 //   i     Build A items "id-id-…"  b   Build B champion id
 //   blvl  Build B level            br  Build B ranks
-//   bi    Build B items            combo  steps "Q-E-AA-ITEM_3152"
+//   bi    Build B items            combo   Build A combo steps "Q-E-AA-ITEM_3152"
+//   bcombo Build B combo (only when champs differ)
 //   t     target "hp-armor-mr-shield-bonusHP-level"
 
 import { championList } from '../data';
@@ -46,7 +47,7 @@ function decItems(str) {
   return out;
 }
 
-export function encodeShareUrl(builds, combo, target) {
+export function encodeShareUrl(builds, combo, target, comboB) {
   const a = builds[0] || {};
   const path = a.championId ? `/c/${a.championId}` : '/';
   const q = new URLSearchParams();
@@ -70,6 +71,7 @@ export function encodeShareUrl(builds, combo, target) {
   }
 
   if (combo && combo.length) q.set('combo', combo.join('-'));
+  if (comboB && comboB.length) q.set('bcombo', comboB.join('-'));
 
   if (a.championId && target) {
     q.set('t', [target.hp, target.armor, target.spellblock, target.shield, target.bonusHP, target.level].join('-'));
@@ -106,6 +108,7 @@ export function decodeShareUrl(pathname, search) {
   }
 
   const combo = q.has('combo') ? q.get('combo').split('-').filter(Boolean) : null;
+  const comboB = q.has('bcombo') ? q.get('bcombo').split('-').filter(Boolean) : null;
 
   let target = null;
   if (q.has('t')) {
@@ -116,5 +119,5 @@ export function decodeShareUrl(pathname, search) {
     target = { hp, armor, spellblock, shield, bonusHP, level };
   }
 
-  return { builds, combo, target };
+  return { builds, combo, comboB, target };
 }
