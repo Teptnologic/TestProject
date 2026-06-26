@@ -528,9 +528,24 @@ input { font-family: inherit; }
   color: #c89b3c;
   overflow: hidden;
   cursor: pointer;
+  position: relative;
 }
 
 .combo-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+.combo-cast-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #c89b3c;
+  color: #0a0d13;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 4px;
+  border-top-left-radius: 4px;
+  pointer-events: none;
+}
 
 .combo-step .remove-step {
   position: absolute;

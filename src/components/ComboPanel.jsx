@@ -78,6 +78,8 @@ export default function ComboPanel({ build, setCombo }) {
               ? { borderColor: '#e67e22', color: '#e67e22' }
               : undefined;
             const isCast = baseKey && key !== baseKey;
+            // For multi-cast steps (E1, E2, R1, R2…) extract the cast suffix to overlay on the icon
+            const castSuffix = isCast ? key.slice(baseKey.length) : null;
             const title = isAA ? (key === 'AA4' ? '4th Shot' : 'Auto Attack') : isItem ? `Item Active` : isCast ? `${ability?.name} (${key})` : ability?.name;
             return (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -87,6 +89,7 @@ export default function ComboPanel({ build, setCombo }) {
                       : isItem ? <img src={itemIconUrl} alt="Item" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                       : iconUrl ? <img src={iconUrl} alt={key} />
                       : <span>{key}</span>}
+                    {castSuffix && <span className="combo-cast-badge">{castSuffix}</span>}
                   </div>
                   <span className="combo-step-number">{idx + 1}</span>
                   <button className="remove-step" onClick={() => removeStep(idx)}>×</button>
