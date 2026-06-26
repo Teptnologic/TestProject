@@ -130,6 +130,18 @@ function normalizeSpell(rawEntry, ddragonSpell, abilityKey) {
 }
 
 
+// Merge list stats (wiki-patched) with detail stats. Detail wins unless its
+// value is 0/falsy — DDragon's detail endpoint returns 0 for per-level growth
+// on every champion, so we keep the wiki-patched list value in that case.
+function mergeStats(listStats, detailStats) {
+  const out = { ...listStats };
+  if (!detailStats) return out;
+  for (const [k, v] of Object.entries(detailStats)) {
+    if (v != null && v !== 0) out[k] = v;
+  }
+  return out;
+}
+
 function normalizeChampion(meta) {
   const detail = details[meta.id];
   if (!detail) return { ...meta, abilities: [] };
@@ -212,7 +224,7 @@ function normalizeChampion(meta) {
     name: meta.name,
     title: meta.title,
     tags: meta.tags,
-    stats: { ...meta.stats, ...detail.ddragon?.stats },
+    stats: mergeStats(meta.stats, detail.ddragon?.stats),
     abilities,
     recastAbilities,
     passive: detail.ddragon?.passive,
