@@ -41,6 +41,12 @@ export const MULTI_CAST = {
       { castKey: 'Q2', label: 'Q2', name: 'Hate Spike (spikes)', calcName: 'TotalBonusDamage' },
     ],
   },
+  Locke: {
+    E: [
+      { castKey: 'E1', label: 'E1', name: 'Ashen Pursuit (dash)', calcName: 'DashDamage', damageType: 'magic' },
+      { castKey: 'E2', label: 'E2', name: 'Ashen Pursuit (on-hit)', calcName: 'OnHitDamage', damageType: 'magic' },
+    ],
+  },
   Jhin: {
     R: [
       { castKey: 'R1', label: 'R', name: 'Curtain Call (1 shot)', calcName: 'DamageCalc', execute: { maxMultiplier: 4, threshold: 1.0 } },

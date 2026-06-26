@@ -129,6 +129,19 @@ function normalizeSpell(rawEntry, ddragonSpell, abilityKey) {
   };
 }
 
+
+// Merge list stats (wiki-patched) with detail stats. Detail wins unless its
+// value is 0/falsy — DDragon's detail endpoint returns 0 for per-level growth
+// on every champion, so we keep the wiki-patched list value in that case.
+function mergeStats(listStats, detailStats) {
+  const out = { ...listStats };
+  if (!detailStats) return out;
+  for (const [k, v] of Object.entries(detailStats)) {
+    if (v != null && v !== 0) out[k] = v;
+  }
+  return out;
+}
+
 function normalizeChampion(meta) {
   const detail = details[meta.id];
   if (!detail) return { ...meta, abilities: [] };
@@ -181,12 +194,28 @@ function normalizeChampion(meta) {
   }
 
   // Q/W/E/R from CharacterRecords spell paths
+  const mainScriptNames = new Set();
   for (let i = 0; i < 4 && i < spellPaths.length; i++) {
     const path = spellPaths[i]; // e.g. "LuxLightBindingAbility/LuxLightBinding"
     const identifier = path.split('/').pop();
+    mainScriptNames.add(identifier);
     const entry = pickMainSpellEntry(bin, identifier);
     const ddSpell = ddragonSpells[i];
     abilities.push(normalizeSpell(entry, ddSpell, ABILITY_KEYS[i + 1]));
+  }
+
+  // Recast spells: hash-keyed bin entries with mSpell that aren't passive or main spells
+  const recastAbilities = {};
+  const passiveScriptName = passiveEntry?.[1]?.mScriptName;
+  for (const [k, v] of Object.entries(bin)) {
+    if (!v?.mSpell || !v.mScriptName) continue;
+    if (mainScriptNames.has(v.mScriptName)) continue;
+    if (v.mScriptName === passiveScriptName) continue;
+    if (k.includes('CharacterRecords')) continue;
+    const spell = normalizeSpell(v, null, v.mScriptName);
+    if (spell.dataValues && Object.keys(spell.dataValues).length) {
+      recastAbilities[v.mScriptName] = spell;
+    }
   }
 
   return {
@@ -195,8 +224,9 @@ function normalizeChampion(meta) {
     name: meta.name,
     title: meta.title,
     tags: meta.tags,
-    stats: meta.stats,
+    stats: mergeStats(meta.stats, detail.ddragon?.stats),
     abilities,
+    recastAbilities,
     passive: detail.ddragon?.passive,
   };
 }

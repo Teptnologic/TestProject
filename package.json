@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:debug": "VITE_DEBUG=1 vite",
     "build": "vite build && node scripts/prerender.js",
     "lint": "eslint .",
     "preview": "vite preview",

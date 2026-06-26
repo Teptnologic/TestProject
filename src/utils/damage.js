@@ -18,6 +18,22 @@ const CHAMPION_AA = {
       ],
     },
   },
+  Locke: {
+    // Passive (Silver Stake): AA on-hit magic damage scaling with level + AP
+    passiveOnHit: true,
+    // Q marks: AA and E2 consume marks for bonus damage
+    markConsumers: ['AA', 'E1', 'E2'],
+    markAbility: 'Q',
+    // Indexed 1-based: index 1 = Q rank 1, index 5 = Q rank 5 (matches Riot bin convention)
+    markDamage: [10, 20, 30, 40, 50, 60, 70],
+    markRatio: [0.225, 0.25, 0.275, 0.30, 0.325, 0.35, 0.375],
+    twoMarkBonus: 0.20,
+    threeMarkBonus: 0.40,
+    maxStacks: 3,
+    // R execute: base threshold + per-mark bonus (1-based: index 1 = R rank 1)
+    executeThreshold: [0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15],
+    executePerStack: 0.005,
+  },
   Vayne: {
     appliesStacks: ['E'],
     onHits: [
@@ -429,6 +445,11 @@ function pickDamageCalc(calculations) {
       return { name, calc };
     }
   }
+  const entries = Object.entries(calculations);
+  if (entries.length) {
+    const [name, calc] = entries[0];
+    if (calc.parts?.length) return { name, calc };
+  }
   return null;
 }
 
@@ -582,6 +603,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let aaCount = 0;
   let hitCount = 0; // consecutive hits on target (for Vayne W)
   let empowered = null; // ability key that empowers next AA (for Vayne Q)
+  let lockeMarks = 0; // Locke Q mark stacks on target
   const targetMaxHP = (target.hp || 0) + (target.shield || 0);
   let targetCurrentHP = targetMaxHP;
 
@@ -643,6 +665,26 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       hitCount++;
       empowered = null; // consumed
       for (const r of aaResults) addDmg(r);
+      // Locke mark consumption on AA
+      if (champId === 'Locke') {
+        const lockeAA = CHAMPION_AA.Locke;
+        if (lockeMarks > 0) {
+          const qRank = ranks.Q || 1;
+          const baseMark = lockeAA.markDamage[qRank] || 0;
+          const ratio = lockeAA.markRatio[qRank] || 0;
+          let markRaw = baseMark + ratio * (activeStats.ap || 0);
+          const bonus = lockeMarks >= 3 ? lockeAA.threeMarkBonus : lockeMarks >= 2 ? lockeAA.twoMarkBonus : 0;
+          markRaw *= (1 + bonus);
+          markRaw *= lockeMarks;
+          addDmg({
+            abilityKey: 'AA',
+            abilityName: `Ritual Nails (${lockeMarks} mark${lockeMarks > 1 ? 's' : ''})`,
+            raw: markRaw,
+            type: 'magic',
+          });
+          lockeMarks = 0;
+        }
+      }
       if (lastWasSpell) {
         const sb = computeSpellbladeDamage(activeStats, items);
         if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
@@ -681,6 +723,27 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         attackdamage: activeStats.attackdamage + rBonusAD,
         bonusAD: (activeStats.bonusAD || 0) + rBonusAD,
       };
+    }
+
+    // Locke P: scales with missing HP, interpolate between base and empowered calcs
+    if (champId === 'Locke' && baseKey === 'P' && ability.calculations) {
+      const calcEntries = Object.entries(ability.calculations);
+      if (calcEntries.length >= 2) {
+        const attackerWithSpell = { ...activeStats, spellDataValues: ability.dataValues };
+        const rawBase = evaluateCalc(calcEntries[0][1], rank, attackerWithSpell, charLevel);
+        const rawEmpowered = evaluateCalc(calcEntries[1][1], rank, attackerWithSpell, charLevel);
+        const missingPct = targetMaxHP > 0 ? Math.max(0, 1 - targetCurrentHP / targetMaxHP) : 0;
+        const t = Math.min(1, missingPct / 0.7);
+        const raw = rawBase + (rawEmpowered - rawBase) * t;
+        addDmg({
+          abilityKey: 'P',
+          abilityName: ability.name,
+          raw,
+          type: 'magic',
+        });
+        lastWasSpell = true;
+        continue;
+      }
     }
 
     const result = computeAbilityDamage(ability, rank, activeStats, charLevel, targetCalcName);
@@ -731,6 +794,36 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         for (const oh of champAA.onHits) {
           if (oh.type === 'empoweredAA' && baseKey === oh.triggerStep) {
             empowered = oh.triggerStep;
+          }
+        }
+      }
+      // Locke: Q applies marks, E2 consumes marks, R executes with mark scaling
+      if (champId === 'Locke') {
+        if (baseKey === 'Q') {
+          lockeMarks = Math.min(champAA.maxStacks, lockeMarks + 1);
+        }
+        if ((step === 'E1' || step === 'E2') && lockeMarks > 0) {
+          const qRank = ranks.Q || 1;
+          const baseMark = champAA.markDamage[qRank] || 0;
+          const ratio = champAA.markRatio[qRank] || 0;
+          let markRaw = baseMark + ratio * (activeStats.ap || 0);
+          const bonus = lockeMarks >= 3 ? champAA.threeMarkBonus : lockeMarks >= 2 ? champAA.twoMarkBonus : 0;
+          markRaw *= (1 + bonus);
+          markRaw *= lockeMarks;
+          addDmg({
+            abilityKey: 'E',
+            abilityName: `Ritual Nails (${lockeMarks} mark${lockeMarks > 1 ? 's' : ''})`,
+            raw: markRaw,
+            type: 'magic',
+          });
+          lockeMarks = 0;
+        }
+        if (baseKey === 'R' && result && result.raw) {
+          const rRank = ranks.R || 1;
+          const threshold = champAA.executeThreshold[rRank] + champAA.executePerStack * lockeMarks;
+          const hpPct = targetMaxHP > 0 ? targetCurrentHP / targetMaxHP : 1;
+          if (hpPct <= threshold) {
+            result.abilityName += ` [EXECUTE ${Math.round(threshold * 100)}%]`;
           }
         }
       }

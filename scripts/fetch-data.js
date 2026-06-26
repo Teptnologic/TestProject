@@ -8,6 +8,7 @@ const OUT_DIR = join(__dirname, '..', 'src', 'data', 'generated');
 
 const DDRAGON = 'https://ddragon.leagueoflegends.com';
 const CDRAGON = 'https://raw.communitydragon.org/latest';
+const LOL_WIKI = 'https://wiki.leagueoflegends.com';
 
 async function fetchJSON(url) {
   const res = await fetch(url);
@@ -40,6 +41,7 @@ async function fetchChampionDetail(version, championId) {
   return {
     id: champ.id,
     name: champ.name,
+    stats: champ.stats,
     passive: {
       name: champ.passive.name,
       description: champ.passive.description,
@@ -311,6 +313,118 @@ async function fetchItemBinData(itemIds) {
   }
 }
 
+// Fetch champion stats from LoL Wiki's Module:ChampionData/data Lua module.
+// The wiki stores stats in Lua, not Cargo tables. We fetch the raw source
+// via the MediaWiki API and parse the Lua table into JS objects.
+async function fetchWikiChampionStats() {
+  // Weird Gloop wiki — try multiple API paths since the locale prefix varies
+  const params = 'action=query&prop=revisions&rvprop=content&rvslots=main&titles=Module:ChampionData/data&format=json';
+  const urls = [
+    `${LOL_WIKI}/en-us/api.php?${params}`,
+    `${LOL_WIKI}/en-us/w/api.php?${params}`,
+    `${LOL_WIKI}/api.php?${params}`,
+    `${LOL_WIKI}/w/api.php?${params}`,
+  ];
+
+  let data = null;
+  let usedUrl = '';
+  for (const url of urls) {
+    try {
+      data = await fetchJSON(url);
+      usedUrl = url;
+      if (data?.query?.pages) break;
+    } catch {
+      continue;
+    }
+  }
+  if (!data?.query?.pages) throw new Error('All wiki API paths failed');
+
+  const page = Object.values(data.query.pages)[0];
+  const rev = page?.revisions?.[0];
+
+  // rvslots=main wraps content in slots.main.content; legacy puts it in revisions[0]['*']
+  const lua = rev?.slots?.main?.content
+    || rev?.slots?.main?.['*']
+    || rev?.['*']
+    || rev?.content;
+  if (!lua) throw new Error('Could not extract Lua source from wiki response');
+
+  return parseLuaChampionData(lua);
+}
+
+// Map wiki stat field names to DDragon stat names
+const WIKI_STAT_MAP = {
+  hp_base: 'hp',
+  hp_lvl: 'hpperlevel',
+  mp_base: 'mp',
+  mp_lvl: 'mpperlevel',
+  dam_base: 'attackdamage',
+  dam_lvl: 'attackdamageperlevel',
+  arm_base: 'armor',
+  arm_lvl: 'armorperlevel',
+  mr_base: 'spellblock',
+  mr_lvl: 'spellblockperlevel',
+  hp5_base: 'hpregen',
+  hp5_lvl: 'hpregenperlevel',
+  mp5_base: 'mpregen',
+  mp5_lvl: 'mpregenperlevel',
+  as_base: 'attackspeed',
+  as_lvl: 'attackspeedperlevel',
+  range: 'attackrange',
+  ms: 'movespeed',
+};
+
+// Parse the Lua source of Module:ChampionData/data into a JS map.
+// The Lua structure is: return { ["ChampionName"] = { ... stats = { ... } ... }, ... }
+function parseLuaChampionData(lua) {
+  const map = {};
+
+  // Match each champion block: ["Name"] = { ... }
+  // We look for the stats sub-table within each champion block
+  const champRegex = /\["([^"]+)"\]\s*=\s*\{/g;
+  let match;
+
+  while ((match = champRegex.exec(lua)) !== null) {
+    const champName = match[1];
+    const blockStart = match.index + match[0].length;
+
+    // Find the stats = { ... } block within this champion entry
+    const remaining = lua.slice(blockStart, blockStart + 3000);
+    const statsMatch = remaining.match(/(?:\["stats"\]|stats)\s*=\s*\{([^}]+)\}/);
+    if (!statsMatch) continue;
+
+    const statsBlock = statsMatch[1];
+    const stats = {};
+
+    // Parse key = value pairs — handles both bare keys and ["key"] syntax
+    const kvRegex = /(?:\["(\w+)"\]|(\w+))\s*=\s*([+-]?[\d.]+)/g;
+    let kv;
+    while ((kv = kvRegex.exec(statsBlock)) !== null) {
+      const wikiKey = kv[1] || kv[2];
+      const value = parseFloat(kv[3]);
+      const ddKey = WIKI_STAT_MAP[wikiKey];
+      if (ddKey && !isNaN(value)) {
+        stats[ddKey] = value;
+      }
+    }
+
+    // Also extract apiname for matching (e.g. apiname = "Aurelion Sol" -> AurelionSol)
+    const apiMatch = remaining.match(/(?:\["apiname"\]|apiname)\s*=\s*"([^"]+)"/);
+    const apiname = apiMatch ? apiMatch[1] : champName;
+
+    if (Object.keys(stats).length > 0) {
+      map[champName] = stats;
+      // Also store by apiname (spaces removed) for matching with DDragon IDs
+      const normalized = apiname.replace(/[' .]/g, '');
+      if (normalized !== champName) {
+        map[normalized] = stats;
+      }
+    }
+  }
+
+  return map;
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
@@ -342,6 +456,29 @@ async function main() {
     details[c.id] = { ddragon: dd, cdragon: cd };
   }
   console.log('');
+
+  console.log('Fetching LoL Wiki champion stats...');
+  let wikiStats = null;
+  try {
+    wikiStats = await fetchWikiChampionStats();
+    console.log(`  ${Object.keys(wikiStats).length} champions from wiki`);
+    // Patch DDragon stats with wiki per-level values
+    let patched = 0;
+    for (const c of champions) {
+      // Try exact match, then without spaces/apostrophes
+      const ws = wikiStats[c.id] || wikiStats[c.name?.replace(/[' ]/g, '')];
+      if (!ws) continue;
+      for (const [key, val] of Object.entries(ws)) {
+        if (val && (!c.stats[key] || c.stats[key] === 0)) {
+          c.stats[key] = val;
+          patched++;
+        }
+      }
+    }
+    console.log(`  Patched ${patched} missing stat values from wiki`);
+  } catch (err) {
+    console.warn(`  Wiki fetch failed (non-fatal): ${err.message}`);
+  }
 
   console.log('Fetching items...');
   const items = await fetchItems(version);

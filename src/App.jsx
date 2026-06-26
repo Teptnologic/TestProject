@@ -20,6 +20,8 @@ const INITIAL_BUILD = {
   level: 11,
   ranks: { P: 1, Q: 0, W: 0, E: 0, R: 0 },
   items: [null, null, null, null, null, null],
+  adaptiveForce: 0,
+  adaptiveType: 'auto',
 };
 
 const INITIAL_TARGET = {
@@ -107,16 +109,42 @@ export default function App() {
   const resolvedBuilds = useMemo(() => builds.map((build) => {
     const champion = build.championId ? getChampion(build.championId) : null;
     const items = resolveItems(build.items);
-    const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks) : null;
-    if (champion) {
-      console.group(`[Boris] ${champion.name} (${champion.id})`);
-      console.log('Base Stats:', champion.stats);
-      console.log('Computed Stats:', stats);
-      console.log('Ranks:', build.ranks);
-      console.log('Level:', build.level);
-      console.log('Items:', items);
-      console.log('Abilities:', champion.abilities);
-      console.groupEnd();
+    const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks, build.adaptiveForce, build.adaptiveType) : null;
+    if (champion && import.meta.env.DEV && import.meta.env.VITE_DEBUG) {
+      fetch('/__log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: `Boris ${champion.name} (${champion.id})`,
+          data: {
+            baseStats: champion.stats,
+            computedStats: stats,
+            ranks: build.ranks,
+            level: build.level,
+            adaptiveForce: build.adaptiveForce,
+            adaptiveType: build.adaptiveType,
+            items: items.map((i) => i && {
+              id: i.id,
+              name: i.name,
+              stats: i.stats,
+              overrides: i._overrides,
+              binDirectStats: i.bin?.directStats,
+            }),
+            abilities: champion.abilities?.map((a) => ({
+              key: a.key,
+              name: a.name,
+              maxrank: a.maxrank,
+              cooldown: a.cooldown,
+              cost: a.cost,
+              range: a.range,
+              dataValues: a.dataValues,
+              calculations: a.calculations,
+            })),
+            recastAbilities: champion.recastAbilities,
+            passive: champion.passive,
+          },
+        }),
+      }).catch(() => {});
     }
     return { ...build, champion, items, stats };
   }), [builds]);
