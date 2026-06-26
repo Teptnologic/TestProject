@@ -79,6 +79,8 @@ export default function ComboPanel({ build, setCombo }) {
               : undefined;
             const isCast = baseKey && key !== baseKey;
             const title = isAA ? (key === 'AA4' ? '4th Shot' : 'Auto Attack') : isItem ? `Item Active` : isCast ? `${ability?.name} (${key})` : ability?.name;
+            // Show the full step key (Q, W, E, P, R, E1, E2, R1, etc.) as a badge on ability icons
+            const keyBadge = !isAA && !isItem ? key : null;
             return (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className="combo-step">
@@ -87,6 +89,7 @@ export default function ComboPanel({ build, setCombo }) {
                       : isItem ? <img src={itemIconUrl} alt="Item" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                       : iconUrl ? <img src={iconUrl} alt={key} />
                       : <span>{key}</span>}
+                    {keyBadge && <span className="combo-cast-badge">{keyBadge}</span>}
                   </div>
                   <span className="combo-step-number">{idx + 1}</span>
                   <button className="remove-step" onClick={() => removeStep(idx)}>×</button>
