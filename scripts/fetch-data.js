@@ -8,6 +8,7 @@ const OUT_DIR = join(__dirname, '..', 'src', 'data', 'generated');
 
 const DDRAGON = 'https://ddragon.leagueoflegends.com';
 const CDRAGON = 'https://raw.communitydragon.org/latest';
+const LOL_WIKI = 'https://leagueoflegends.fandom.com';
 
 async function fetchJSON(url) {
   const res = await fetch(url);
@@ -312,6 +313,67 @@ async function fetchItemBinData(itemIds) {
   }
 }
 
+// Fetch champion stats from LoL Wiki's Cargo API.
+// Returns a map of champion name -> stats object with per-level growth values.
+async function fetchWikiChampionStats() {
+  const fields = [
+    '_pageName=name',
+    'id',
+    'hp_base', 'hp_lvl',
+    'mp_base', 'mp_lvl',
+    'dam_base', 'dam_lvl',
+    'arm_base', 'arm_lvl',
+    'mr_base', 'mr_lvl',
+    'hp5_base', 'hp5_lvl',
+    'mp5_base', 'mp5_lvl',
+    'as_base', 'as_lvl',
+    'range',
+    'ms',
+  ].join(',');
+
+  const allStats = [];
+  let offset = 0;
+  const limit = 50;
+
+  while (true) {
+    const url = `${LOL_WIKI}/wiki/Special:CargoExport?tables=ChampionStats&fields=${fields}&format=json&limit=${limit}&offset=${offset}`;
+    const batch = await fetchJSON(url);
+    if (!batch.length) break;
+    allStats.push(...batch);
+    if (batch.length < limit) break;
+    offset += limit;
+  }
+
+  const map = {};
+  for (const row of allStats) {
+    const name = row.name?.replace(/ /g, '');
+    if (!name) continue;
+    map[name] = {
+      hp: parseFloat(row['hp base']) || 0,
+      hpperlevel: parseFloat(row['hp lvl']) || 0,
+      mp: parseFloat(row['mp base']) || 0,
+      mpperlevel: parseFloat(row['mp lvl']) || 0,
+      attackdamage: parseFloat(row['dam base']) || 0,
+      attackdamageperlevel: parseFloat(row['dam lvl']) || 0,
+      armor: parseFloat(row['arm base']) || 0,
+      armorperlevel: parseFloat(row['arm lvl']) || 0,
+      spellblock: parseFloat(row['mr base']) || 0,
+      spellblockperlevel: parseFloat(row['mr lvl']) || 0,
+      hpregen: parseFloat(row['hp5 base']) || 0,
+      hpregenperlevel: parseFloat(row['hp5 lvl']) || 0,
+      mpregen: parseFloat(row['mp5 base']) || 0,
+      mpregenperlevel: parseFloat(row['mp5 lvl']) || 0,
+      attackspeedperlevel: parseFloat(row['as lvl']) || 0,
+      attackrange: parseFloat(row.range) || 0,
+      movespeed: parseFloat(row.ms) || 0,
+    };
+    // as_base from wiki is a ratio (e.g. 0.658), matches DDragon's attackspeed
+    const asBase = parseFloat(row['as base']);
+    if (asBase) map[name].attackspeed = asBase;
+  }
+  return map;
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
@@ -343,6 +405,29 @@ async function main() {
     details[c.id] = { ddragon: dd, cdragon: cd };
   }
   console.log('');
+
+  console.log('Fetching LoL Wiki champion stats...');
+  let wikiStats = null;
+  try {
+    wikiStats = await fetchWikiChampionStats();
+    console.log(`  ${Object.keys(wikiStats).length} champions from wiki`);
+    // Patch DDragon stats with wiki per-level values
+    let patched = 0;
+    for (const c of champions) {
+      // Try exact match, then without spaces/apostrophes
+      const ws = wikiStats[c.id] || wikiStats[c.name?.replace(/[' ]/g, '')];
+      if (!ws) continue;
+      for (const [key, val] of Object.entries(ws)) {
+        if (val && (!c.stats[key] || c.stats[key] === 0)) {
+          c.stats[key] = val;
+          patched++;
+        }
+      }
+    }
+    console.log(`  Patched ${patched} missing stat values from wiki`);
+  } catch (err) {
+    console.warn(`  Wiki fetch failed (non-fatal): ${err.message}`);
+  }
 
   console.log('Fetching items...');
   const items = await fetchItems(version);

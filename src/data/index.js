@@ -129,18 +129,6 @@ function normalizeSpell(rawEntry, ddragonSpell, abilityKey) {
   };
 }
 
-// DDragon returns attackdamageperlevel: 0 for all champions (Riot API bug).
-// Hardcoded from LoL Wiki — update when Riot fixes their API or on balance patches.
-const AD_PER_LEVEL = {
-  Akali: 3.3,
-  Lux: 3.5,
-  Ahri: 3,
-  Katarina: 3.2,
-  Vayne: 2.35,
-  Jhin: 4.7,
-  Locke: 3,
-  Evelynn: 3,
-};
 
 function normalizeChampion(meta) {
   const detail = details[meta.id];
@@ -224,13 +212,7 @@ function normalizeChampion(meta) {
     name: meta.name,
     title: meta.title,
     tags: meta.tags,
-    stats: (() => {
-      const s = { ...meta.stats, ...detail.ddragon?.stats };
-      if (!s.attackdamageperlevel && AD_PER_LEVEL[meta.id]) {
-        s.attackdamageperlevel = AD_PER_LEVEL[meta.id];
-      }
-      return s;
-    })(),
+    stats: { ...meta.stats, ...detail.ddragon?.stats },
     abilities,
     recastAbilities,
     passive: detail.ddragon?.passive,
