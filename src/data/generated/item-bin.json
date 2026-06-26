@@ -675,7 +675,7 @@
   "2504": {
     "dataValues": {
       "ShieldAmount": 0.15000000596046448,
-      "OutOfCombatDuration": 15
+      "OutOfCombatDuration": 10
     },
     "calculations": {
       "ShieldCalc": {
@@ -2147,7 +2147,7 @@
   },
   "3102": {
     "dataValues": {
-      "Cooldown": 40
+      "Cooldown": 20
     },
     "effectAmount": [
       40,
@@ -4348,9 +4348,9 @@
   },
   "4005": {
     "dataValues": {
-      "DamageAmp": 0.05999999865889549,
+      "DamageAmp": 0.07000000029802322,
       "DamageAmpDuration": 4,
-      "ImmobilizingAbilityAH": 15
+      "ImmobilizingAbilityAH": 20
     },
     "effectAmount": [
       0,
@@ -5235,7 +5235,7 @@
   },
   "6694": {
     "dataValues": {
-      "SlowAmount": 0.30000001192092896,
+      "SlowAmount": 0.5,
       "SlowDuration": 1,
       "LethalityAmount": 0,
       "SlowThreshold": 0.5
@@ -5255,7 +5255,7 @@
       }
     },
     "directStats": {
-      "abilityHaste": 10,
+      "abilityHaste": 15,
       "pctArmorPen": 0.4000000059604645
     }
   },
@@ -5876,9 +5876,9 @@
   },
   "324005": {
     "dataValues": {
-      "DamageAmp": 0.05999999865889549,
+      "DamageAmp": 0.07000000029802322,
       "DamageAmpDuration": 4,
-      "ImmobilizingAbilityAH": 15
+      "ImmobilizingAbilityAH": 20
     },
     "effectAmount": [
       0,
