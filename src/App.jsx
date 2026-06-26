@@ -110,15 +110,22 @@ export default function App() {
     const champion = build.championId ? getChampion(build.championId) : null;
     const items = resolveItems(build.items);
     const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks, build.adaptiveForce, build.adaptiveType) : null;
-    if (champion) {
-      console.group(`[Boris] ${champion.name} (${champion.id})`);
-      console.log('Base Stats:', champion.stats);
-      console.log('Computed Stats:', stats);
-      console.log('Ranks:', build.ranks);
-      console.log('Level:', build.level);
-      console.log('Items:', items);
-      console.log('Abilities:', champion.abilities);
-      console.groupEnd();
+    if (champion && import.meta.env.DEV) {
+      fetch('/__log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: `Boris ${champion.name} (${champion.id})`,
+          data: {
+            baseStats: champion.stats,
+            computedStats: stats,
+            ranks: build.ranks,
+            level: build.level,
+            items: items.map((i) => i && { id: i.id, name: i.name }),
+            abilityKeys: champion.abilities?.map((a) => a.key),
+          },
+        }),
+      }).catch(() => {});
     }
     return { ...build, champion, items, stats };
   }), [builds]);
