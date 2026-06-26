@@ -24,13 +24,14 @@ const CHAMPION_AA = {
     // Q marks: AA and E2 consume marks for bonus damage
     markConsumers: ['AA', 'E2'],
     markAbility: 'Q',
-    markDamage: [0, 10, 20, 30, 40, 50, 60, 70],
-    markRatio: [0, 0.225, 0.25, 0.275, 0.30, 0.325, 0.35, 0.375],
+    // Indexed 1-based: index 1 = Q rank 1, index 5 = Q rank 5 (matches Riot bin convention)
+    markDamage: [10, 20, 30, 40, 50, 60, 70],
+    markRatio: [0.225, 0.25, 0.275, 0.30, 0.325, 0.35, 0.375],
     twoMarkBonus: 0.20,
     threeMarkBonus: 0.40,
     maxStacks: 3,
-    // R execute: base threshold + per-mark bonus
-    executeThreshold: [0, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15],
+    // R execute: base threshold + per-mark bonus (1-based: index 1 = R rank 1)
+    executeThreshold: [0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15],
     executePerStack: 0.005,
   },
   Vayne: {
