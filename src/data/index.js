@@ -181,12 +181,28 @@ function normalizeChampion(meta) {
   }
 
   // Q/W/E/R from CharacterRecords spell paths
+  const mainScriptNames = new Set();
   for (let i = 0; i < 4 && i < spellPaths.length; i++) {
     const path = spellPaths[i]; // e.g. "LuxLightBindingAbility/LuxLightBinding"
     const identifier = path.split('/').pop();
+    mainScriptNames.add(identifier);
     const entry = pickMainSpellEntry(bin, identifier);
     const ddSpell = ddragonSpells[i];
     abilities.push(normalizeSpell(entry, ddSpell, ABILITY_KEYS[i + 1]));
+  }
+
+  // Recast spells: hash-keyed bin entries with mSpell that aren't passive or main spells
+  const recastAbilities = {};
+  const passiveScriptName = passiveEntry?.[1]?.mScriptName;
+  for (const [k, v] of Object.entries(bin)) {
+    if (!v?.mSpell || !v.mScriptName) continue;
+    if (mainScriptNames.has(v.mScriptName)) continue;
+    if (v.mScriptName === passiveScriptName) continue;
+    if (k.includes('CharacterRecords')) continue;
+    const spell = normalizeSpell(v, null, v.mScriptName);
+    if (spell.dataValues && Object.keys(spell.dataValues).length) {
+      recastAbilities[v.mScriptName] = spell;
+    }
   }
 
   return {
@@ -197,6 +213,7 @@ function normalizeChampion(meta) {
     tags: meta.tags,
     stats: meta.stats,
     abilities,
+    recastAbilities,
     passive: detail.ddragon?.passive,
   };
 }

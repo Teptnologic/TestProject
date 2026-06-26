@@ -18,6 +18,21 @@ const CHAMPION_AA = {
       ],
     },
   },
+  Locke: {
+    // Passive (Silver Stake): AA on-hit magic damage scaling with level + AP
+    passiveOnHit: true,
+    // Q marks: AA and E2 consume marks for bonus damage
+    markConsumers: ['AA', 'E2'],
+    markAbility: 'Q',
+    markDamage: [0, 10, 20, 30, 40, 50, 60, 70],
+    markRatio: [0, 0.225, 0.25, 0.275, 0.30, 0.325, 0.35, 0.375],
+    twoMarkBonus: 0.20,
+    threeMarkBonus: 0.40,
+    maxStacks: 3,
+    // R execute: base threshold + per-mark bonus
+    executeThreshold: [0, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15],
+    executePerStack: 0.005,
+  },
   Vayne: {
     appliesStacks: ['E'],
     onHits: [
@@ -582,6 +597,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   let aaCount = 0;
   let hitCount = 0; // consecutive hits on target (for Vayne W)
   let empowered = null; // ability key that empowers next AA (for Vayne Q)
+  let lockeMarks = 0; // Locke Q mark stacks on target
   const targetMaxHP = (target.hp || 0) + (target.shield || 0);
   let targetCurrentHP = targetMaxHP;
 
@@ -643,6 +659,36 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       hitCount++;
       empowered = null; // consumed
       for (const r of aaResults) addDmg(r);
+      // Locke passive on-hit + mark consumption on AA
+      if (champId === 'Locke') {
+        const lockeAA = CHAMPION_AA.Locke;
+        const passive = champion.abilities.find((a) => a.key === 'P');
+        if (passive && Object.keys(passive.calculations).length) {
+          const pResult = computeAbilityDamage(passive, 1, activeStats, charLevel, null);
+          if (pResult && pResult.raw) {
+            pResult.abilityKey = 'P';
+            pResult.abilityName = 'Silver Stake';
+            pResult.type = 'magic';
+            addDmg(pResult);
+          }
+        }
+        if (lockeMarks > 0) {
+          const qRank = ranks.Q || 1;
+          const baseMark = lockeAA.markDamage[qRank] || 0;
+          const ratio = lockeAA.markRatio[qRank] || 0;
+          let markRaw = baseMark + ratio * (activeStats.ap || 0);
+          const bonus = lockeMarks >= 3 ? lockeAA.threeMarkBonus : lockeMarks >= 2 ? lockeAA.twoMarkBonus : 0;
+          markRaw *= (1 + bonus);
+          markRaw *= lockeMarks;
+          addDmg({
+            abilityKey: 'AA',
+            abilityName: `Ritual Nails (${lockeMarks} mark${lockeMarks > 1 ? 's' : ''})`,
+            raw: markRaw,
+            type: 'magic',
+          });
+          lockeMarks = 0;
+        }
+      }
       if (lastWasSpell) {
         const sb = computeSpellbladeDamage(activeStats, items);
         if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
@@ -731,6 +777,36 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         for (const oh of champAA.onHits) {
           if (oh.type === 'empoweredAA' && baseKey === oh.triggerStep) {
             empowered = oh.triggerStep;
+          }
+        }
+      }
+      // Locke: Q applies marks, E2 consumes marks, R executes with mark scaling
+      if (champId === 'Locke') {
+        if (baseKey === 'Q') {
+          lockeMarks = Math.min(champAA.maxStacks, lockeMarks + 1);
+        }
+        if (step === 'E2' && lockeMarks > 0) {
+          const qRank = ranks.Q || 1;
+          const baseMark = champAA.markDamage[qRank] || 0;
+          const ratio = champAA.markRatio[qRank] || 0;
+          let markRaw = baseMark + ratio * (activeStats.ap || 0);
+          const bonus = lockeMarks >= 3 ? champAA.threeMarkBonus : lockeMarks >= 2 ? champAA.twoMarkBonus : 0;
+          markRaw *= (1 + bonus);
+          markRaw *= lockeMarks;
+          addDmg({
+            abilityKey: 'E',
+            abilityName: `Ritual Nails (${lockeMarks} mark${lockeMarks > 1 ? 's' : ''})`,
+            raw: markRaw,
+            type: 'magic',
+          });
+          lockeMarks = 0;
+        }
+        if (baseKey === 'R' && result && result.raw) {
+          const rRank = ranks.R || 1;
+          const threshold = champAA.executeThreshold[rRank] + champAA.executePerStack * lockeMarks;
+          const hpPct = targetMaxHP > 0 ? targetCurrentHP / targetMaxHP : 1;
+          if (hpPct <= threshold) {
+            result.abilityName += ` [EXECUTE ${Math.round(threshold * 100)}%]`;
           }
         }
       }
