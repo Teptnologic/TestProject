@@ -444,6 +444,11 @@ function pickDamageCalc(calculations) {
       return { name, calc };
     }
   }
+  const entries = Object.entries(calculations);
+  if (entries.length) {
+    const [name, calc] = entries[0];
+    if (calc.parts?.length) return { name, calc };
+  }
   return null;
 }
 
@@ -659,19 +664,9 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       hitCount++;
       empowered = null; // consumed
       for (const r of aaResults) addDmg(r);
-      // Locke passive on-hit + mark consumption on AA
+      // Locke mark consumption on AA
       if (champId === 'Locke') {
         const lockeAA = CHAMPION_AA.Locke;
-        const passive = champion.abilities.find((a) => a.key === 'P');
-        if (passive && Object.keys(passive.calculations).length) {
-          const pResult = computeAbilityDamage(passive, 1, activeStats, charLevel, null);
-          if (pResult && pResult.raw) {
-            pResult.abilityKey = 'P';
-            pResult.abilityName = 'Silver Stake';
-            pResult.type = 'magic';
-            addDmg(pResult);
-          }
-        }
         if (lockeMarks > 0) {
           const qRank = ranks.Q || 1;
           const baseMark = lockeAA.markDamage[qRank] || 0;
