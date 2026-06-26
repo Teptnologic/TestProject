@@ -20,6 +20,7 @@ const INITIAL_BUILD = {
   level: 11,
   ranks: { P: 1, Q: 0, W: 0, E: 0, R: 0 },
   items: [null, null, null, null, null, null],
+  adaptiveForce: 0,
 };
 
 const INITIAL_TARGET = {
@@ -107,7 +108,7 @@ export default function App() {
   const resolvedBuilds = useMemo(() => builds.map((build) => {
     const champion = build.championId ? getChampion(build.championId) : null;
     const items = resolveItems(build.items);
-    const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks) : null;
+    const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks, build.adaptiveForce) : null;
     if (champion) {
       console.group(`[Boris] ${champion.name} (${champion.id})`);
       console.log('Base Stats:', champion.stats);

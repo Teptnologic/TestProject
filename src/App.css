@@ -212,6 +212,36 @@ input { font-family: inherit; }
   letter-spacing: 0.5px;
 }
 
+.rune-adaptive {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+.rune-adaptive-label {
+  font-size: 13px;
+  color: #c8cad0;
+  white-space: nowrap;
+}
+.rune-shard-btns { display: flex; gap: 4px; }
+.rune-shard-btn {
+  background: #1e2330;
+  border: 1px solid #2a2f3a;
+  color: #8b92a0;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rune-shard-btn:hover { border-color: #c89b3c; color: #e0e0e0; }
+.rune-shard-btn.active { background: #c89b3c; border-color: #c89b3c; color: #0a0d13; font-weight: 600; }
+.rune-adaptive-hint {
+  font-size: 12px;
+  color: #4fc3f7;
+  margin-left: auto;
+}
+
 .ability-row { display: flex; gap: 12px; }
 .ability-box { flex: 1; text-align: center; }
 

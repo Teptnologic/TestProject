@@ -105,6 +105,27 @@ export default function ChampionPanel({ build, setBuild, stats, setCombo }) {
             <div className="section-label">Items</div>
             <ItemSlots build={build} setBuild={setBuild} />
 
+            <div className="section-label">Runes</div>
+            <div className="rune-adaptive">
+              <span className="rune-adaptive-label">Adaptive Force</span>
+              <div className="rune-shard-btns">
+                {[0, 1, 2].map((n) => (
+                  <button
+                    key={n}
+                    className={`rune-shard-btn ${(build.adaptiveForce || 0) === n ? 'active' : ''}`}
+                    onClick={() => setBuild((b) => ({ ...b, adaptiveForce: n }))}
+                  >
+                    {n === 0 ? 'Off' : `×${n}`}
+                  </button>
+                ))}
+              </div>
+              {(build.adaptiveForce || 0) > 0 && (
+                <span className="rune-adaptive-hint">
+                  +{stats?.ap > (stats?.bonusAD || 0) ? `${(build.adaptiveForce || 0) * 14} AP` : `${(build.adaptiveForce || 0) * 9} AD`}
+                </span>
+              )}
+            </div>
+
             <div className="section-label">Stats</div>
             <StatsDisplay stats={stats} />
           </>
