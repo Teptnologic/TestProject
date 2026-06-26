@@ -42,6 +42,12 @@ export const COMBO_TEMPLATES = {
     { name: 'Full Combo', keys: ['W', 'Q', 'AA', 'AA', 'AA', 'AA'] },
     { name: 'Ult (all 4)', keys: ['R1', 'R1', 'R1', 'R4'] },
   ],
+  Locke: [
+    { name: 'Full Combo', keys: ['E', 'Q', 'W', 'R', 'AA'] },
+    { name: 'Poke', keys: ['Q', 'AA'] },
+    { name: 'Short Trade', keys: ['Q', 'W', 'AA'] },
+    { name: 'All-In', keys: ['E', 'Q', 'W', 'AA', 'R', 'Q', 'AA'] },
+  ],
 };
 
 const STORAGE_KEY = 'lol-dmg-calc-custom-combos';
