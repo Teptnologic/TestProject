@@ -22,7 +22,7 @@ const CHAMPION_AA = {
     // Passive (Silver Stake): AA on-hit magic damage scaling with level + AP
     passiveOnHit: true,
     // Q marks: AA and E2 consume marks for bonus damage
-    markConsumers: ['AA', 'E2'],
+    markConsumers: ['AA', 'E1', 'E2'],
     markAbility: 'Q',
     // Indexed 1-based: index 1 = Q rank 1, index 5 = Q rank 5 (matches Riot bin convention)
     markDamage: [10, 20, 30, 40, 50, 60, 70],
@@ -802,7 +802,7 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         if (baseKey === 'Q') {
           lockeMarks = Math.min(champAA.maxStacks, lockeMarks + 1);
         }
-        if (step === 'E2' && lockeMarks > 0) {
+        if ((step === 'E1' || step === 'E2') && lockeMarks > 0) {
           const qRank = ranks.Q || 1;
           const baseMark = champAA.markDamage[qRank] || 0;
           const ratio = champAA.markRatio[qRank] || 0;
