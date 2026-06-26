@@ -724,6 +724,27 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
       };
     }
 
+    // Locke P: scales with missing HP, interpolate between base and empowered calcs
+    if (champId === 'Locke' && baseKey === 'P' && ability.calculations) {
+      const calcEntries = Object.entries(ability.calculations);
+      if (calcEntries.length >= 2) {
+        const attackerWithSpell = { ...activeStats, spellDataValues: ability.dataValues };
+        const rawBase = evaluateCalc(calcEntries[0][1], rank, attackerWithSpell, charLevel);
+        const rawEmpowered = evaluateCalc(calcEntries[1][1], rank, attackerWithSpell, charLevel);
+        const missingPct = targetMaxHP > 0 ? Math.max(0, 1 - targetCurrentHP / targetMaxHP) : 0;
+        const t = Math.min(1, missingPct / 0.7);
+        const raw = rawBase + (rawEmpowered - rawBase) * t;
+        addDmg({
+          abilityKey: 'P',
+          abilityName: ability.name,
+          raw,
+          type: 'magic',
+        });
+        lastWasSpell = true;
+        continue;
+      }
+    }
+
     const result = computeAbilityDamage(ability, rank, activeStats, charLevel, targetCalcName);
     if (result && result.raw) {
       if (cast) {
