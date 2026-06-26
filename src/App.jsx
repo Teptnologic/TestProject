@@ -110,7 +110,7 @@ export default function App() {
     const champion = build.championId ? getChampion(build.championId) : null;
     const items = resolveItems(build.items);
     const stats = champion ? totalStats(champion.stats, build.level, items, champion.id, build.ranks, build.adaptiveForce, build.adaptiveType) : null;
-    if (champion && import.meta.env.DEV) {
+    if (champion && import.meta.env.DEV && import.meta.env.VITE_DEBUG) {
       fetch('/__log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,8 +121,27 @@ export default function App() {
             computedStats: stats,
             ranks: build.ranks,
             level: build.level,
-            items: items.map((i) => i && { id: i.id, name: i.name }),
-            abilityKeys: champion.abilities?.map((a) => a.key),
+            adaptiveForce: build.adaptiveForce,
+            adaptiveType: build.adaptiveType,
+            items: items.map((i) => i && {
+              id: i.id,
+              name: i.name,
+              stats: i.stats,
+              overrides: i._overrides,
+              binDirectStats: i.bin?.directStats,
+            }),
+            abilities: champion.abilities?.map((a) => ({
+              key: a.key,
+              name: a.name,
+              maxrank: a.maxrank,
+              cooldown: a.cooldown,
+              cost: a.cost,
+              range: a.range,
+              dataValues: a.dataValues,
+              calculations: a.calculations,
+            })),
+            recastAbilities: champion.recastAbilities,
+            passive: champion.passive,
           },
         }),
       }).catch(() => {});

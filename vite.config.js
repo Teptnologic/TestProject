@@ -14,7 +14,7 @@ function serverLogPlugin() {
           try {
             const { label, data } = JSON.parse(body);
             console.log(`\n[${label}]`);
-            console.dir(data, { depth: 4, colors: true });
+            console.dir(data, { depth: null, colors: true, maxArrayLength: null });
           } catch {}
           res.statusCode = 204;
           res.end();
