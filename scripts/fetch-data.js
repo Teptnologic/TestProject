@@ -313,64 +313,93 @@ async function fetchItemBinData(itemIds) {
   }
 }
 
-// Fetch champion stats from LoL Wiki's Cargo API.
-// Returns a map of champion name -> stats object with per-level growth values.
+// Fetch champion stats from LoL Wiki's Module:ChampionData/data Lua module.
+// The wiki stores stats in Lua, not Cargo tables. We fetch the raw source
+// via the MediaWiki API and parse the Lua table into JS objects.
 async function fetchWikiChampionStats() {
-  const fields = [
-    '_pageName=name',
-    'id',
-    'hp_base', 'hp_lvl',
-    'mp_base', 'mp_lvl',
-    'dam_base', 'dam_lvl',
-    'arm_base', 'arm_lvl',
-    'mr_base', 'mr_lvl',
-    'hp5_base', 'hp5_lvl',
-    'mp5_base', 'mp5_lvl',
-    'as_base', 'as_lvl',
-    'range',
-    'ms',
-  ].join(',');
+  const url = `${LOL_WIKI}/en-us/api.php?action=query&prop=revisions&rvprop=content&titles=Module:ChampionData/data&format=json`;
+  const data = await fetchJSON(url);
 
-  const allStats = [];
-  let offset = 0;
-  const limit = 50;
+  // MediaWiki wraps pages in { query: { pages: { <id>: { revisions: [...] } } } }
+  const pages = data?.query?.pages;
+  if (!pages) throw new Error('Unexpected wiki API response structure');
+  const page = Object.values(pages)[0];
+  const lua = page?.revisions?.[0]?.['*'];
+  if (!lua) throw new Error('Could not extract Lua source from wiki response');
 
-  while (true) {
-    const url = `${LOL_WIKI}/wiki/Special:CargoExport?tables=ChampionStats&fields=${fields}&format=json&limit=${limit}&offset=${offset}`;
-    const batch = await fetchJSON(url);
-    if (!batch.length) break;
-    allStats.push(...batch);
-    if (batch.length < limit) break;
-    offset += limit;
-  }
+  return parseLuaChampionData(lua);
+}
 
+// Map wiki stat field names to DDragon stat names
+const WIKI_STAT_MAP = {
+  hp_base: 'hp',
+  hp_lvl: 'hpperlevel',
+  mp_base: 'mp',
+  mp_lvl: 'mpperlevel',
+  dam_base: 'attackdamage',
+  dam_lvl: 'attackdamageperlevel',
+  arm_base: 'armor',
+  arm_lvl: 'armorperlevel',
+  mr_base: 'spellblock',
+  mr_lvl: 'spellblockperlevel',
+  hp5_base: 'hpregen',
+  hp5_lvl: 'hpregenperlevel',
+  mp5_base: 'mpregen',
+  mp5_lvl: 'mpregenperlevel',
+  as_base: 'attackspeed',
+  as_lvl: 'attackspeedperlevel',
+  range: 'attackrange',
+  ms: 'movespeed',
+};
+
+// Parse the Lua source of Module:ChampionData/data into a JS map.
+// The Lua structure is: return { ["ChampionName"] = { ... stats = { ... } ... }, ... }
+function parseLuaChampionData(lua) {
   const map = {};
-  for (const row of allStats) {
-    const name = row.name?.replace(/ /g, '');
-    if (!name) continue;
-    map[name] = {
-      hp: parseFloat(row['hp base']) || 0,
-      hpperlevel: parseFloat(row['hp lvl']) || 0,
-      mp: parseFloat(row['mp base']) || 0,
-      mpperlevel: parseFloat(row['mp lvl']) || 0,
-      attackdamage: parseFloat(row['dam base']) || 0,
-      attackdamageperlevel: parseFloat(row['dam lvl']) || 0,
-      armor: parseFloat(row['arm base']) || 0,
-      armorperlevel: parseFloat(row['arm lvl']) || 0,
-      spellblock: parseFloat(row['mr base']) || 0,
-      spellblockperlevel: parseFloat(row['mr lvl']) || 0,
-      hpregen: parseFloat(row['hp5 base']) || 0,
-      hpregenperlevel: parseFloat(row['hp5 lvl']) || 0,
-      mpregen: parseFloat(row['mp5 base']) || 0,
-      mpregenperlevel: parseFloat(row['mp5 lvl']) || 0,
-      attackspeedperlevel: parseFloat(row['as lvl']) || 0,
-      attackrange: parseFloat(row.range) || 0,
-      movespeed: parseFloat(row.ms) || 0,
-    };
-    // as_base from wiki is a ratio (e.g. 0.658), matches DDragon's attackspeed
-    const asBase = parseFloat(row['as base']);
-    if (asBase) map[name].attackspeed = asBase;
+
+  // Match each champion block: ["Name"] = { ... }
+  // We look for the stats sub-table within each champion block
+  const champRegex = /\["([^"]+)"\]\s*=\s*\{/g;
+  let match;
+
+  while ((match = champRegex.exec(lua)) !== null) {
+    const champName = match[1];
+    const blockStart = match.index + match[0].length;
+
+    // Find the stats = { ... } block within this champion entry
+    const remaining = lua.slice(blockStart, blockStart + 3000);
+    const statsMatch = remaining.match(/stats\s*=\s*\{([^}]+)\}/);
+    if (!statsMatch) continue;
+
+    const statsBlock = statsMatch[1];
+    const stats = {};
+
+    // Parse key = value pairs from the stats block
+    const kvRegex = /(\w+)\s*=\s*([+-]?[\d.]+)/g;
+    let kv;
+    while ((kv = kvRegex.exec(statsBlock)) !== null) {
+      const wikiKey = kv[1];
+      const value = parseFloat(kv[2]);
+      const ddKey = WIKI_STAT_MAP[wikiKey];
+      if (ddKey && !isNaN(value)) {
+        stats[ddKey] = value;
+      }
+    }
+
+    // Also extract apiname for matching (e.g. apiname = "Aurelion Sol" -> AurelionSol)
+    const apiMatch = remaining.match(/apiname\s*=\s*"([^"]+)"/);
+    const apiname = apiMatch ? apiMatch[1] : champName;
+
+    if (Object.keys(stats).length > 0) {
+      map[champName] = stats;
+      // Also store by apiname (spaces removed) for matching with DDragon IDs
+      const normalized = apiname.replace(/[' .]/g, '');
+      if (normalized !== champName) {
+        map[normalized] = stats;
+      }
+    }
   }
+
   return map;
 }
 
