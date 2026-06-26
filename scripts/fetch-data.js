@@ -339,18 +339,8 @@ async function fetchWikiChampionStats() {
   }
   if (!data?.query?.pages) throw new Error('All wiki API paths failed');
 
-  console.log(`  Wiki API responded from: ${usedUrl}`);
   const page = Object.values(data.query.pages)[0];
-
-  // Debug: show what keys the response has so we can find the content
   const rev = page?.revisions?.[0];
-  if (rev) {
-    console.log(`  Revision keys: ${Object.keys(rev).join(', ')}`);
-    if (rev.slots) console.log(`  Slot keys: ${Object.keys(rev.slots).join(', ')}`);
-  } else {
-    console.log(`  Page keys: ${Object.keys(page || {}).join(', ')}`);
-    console.log(`  Page snippet: ${JSON.stringify(page).slice(0, 300)}`);
-  }
 
   // rvslots=main wraps content in slots.main.content; legacy puts it in revisions[0]['*']
   const lua = rev?.slots?.main?.content
@@ -389,9 +379,6 @@ const WIKI_STAT_MAP = {
 function parseLuaChampionData(lua) {
   const map = {};
 
-  console.log(`  Lua source length: ${lua.length} chars`);
-  console.log(`  Lua preview: ${lua.slice(0, 500).replace(/\n/g, '\\n')}`);
-
   // Match each champion block: ["Name"] = { ... }
   // We look for the stats sub-table within each champion block
   const champRegex = /\["([^"]+)"\]\s*=\s*\{/g;
@@ -403,18 +390,18 @@ function parseLuaChampionData(lua) {
 
     // Find the stats = { ... } block within this champion entry
     const remaining = lua.slice(blockStart, blockStart + 3000);
-    const statsMatch = remaining.match(/stats\s*=\s*\{([^}]+)\}/);
+    const statsMatch = remaining.match(/(?:\["stats"\]|stats)\s*=\s*\{([^}]+)\}/);
     if (!statsMatch) continue;
 
     const statsBlock = statsMatch[1];
     const stats = {};
 
-    // Parse key = value pairs from the stats block
-    const kvRegex = /(\w+)\s*=\s*([+-]?[\d.]+)/g;
+    // Parse key = value pairs — handles both bare keys and ["key"] syntax
+    const kvRegex = /(?:\["(\w+)"\]|(\w+))\s*=\s*([+-]?[\d.]+)/g;
     let kv;
     while ((kv = kvRegex.exec(statsBlock)) !== null) {
-      const wikiKey = kv[1];
-      const value = parseFloat(kv[2]);
+      const wikiKey = kv[1] || kv[2];
+      const value = parseFloat(kv[3]);
       const ddKey = WIKI_STAT_MAP[wikiKey];
       if (ddKey && !isNaN(value)) {
         stats[ddKey] = value;
@@ -422,7 +409,7 @@ function parseLuaChampionData(lua) {
     }
 
     // Also extract apiname for matching (e.g. apiname = "Aurelion Sol" -> AurelionSol)
-    const apiMatch = remaining.match(/apiname\s*=\s*"([^"]+)"/);
+    const apiMatch = remaining.match(/(?:\["apiname"\]|apiname)\s*=\s*"([^"]+)"/);
     const apiname = apiMatch ? apiMatch[1] : champName;
 
     if (Object.keys(stats).length > 0) {
