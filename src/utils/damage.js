@@ -208,6 +208,23 @@ function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP,
   return results;
 }
 
+// Per-proc Kraken Slayer damage (3rd-hit). Returns null if no Kraken equipped.
+function computeKrakenProcDamage(attacker, items, targetCurrentHP, targetMaxHP) {
+  for (const item of items || []) {
+    if (item?._overrides?.passive?.type !== 'kraken') continue;
+    const bin = item?.bin;
+    if (!bin?.calculations?.DamageAmount) return null;
+    let raw = evaluateItemCalc(bin.calculations.DamageAmount, bin.dataValues || {}, attacker, attacker.level || 1);
+    const maxAmp = bin?.dataValues?.MaxAmpNumber || 1;
+    if (maxAmp > 1 && targetMaxHP > 0) {
+      const missingPct = Math.max(0, 1 - (targetCurrentHP || targetMaxHP) / targetMaxHP);
+      raw *= 1 + (maxAmp - 1) * missingPct;
+    }
+    return { raw, type: item._overrides.passive.damageType || 'physical', procEvery: bin?.dataValues?.AttackCount || 3 };
+  }
+  return null;
+}
+
 // On-hit item damage that applies per-hit regardless of nth-hit counters.
 // Used by abilities that proc on-hits at a reduced ratio (e.g. Katarina R).
 function computeFlatOnHitDamage(attacker, items, targetCurrentHP) {
@@ -802,6 +819,19 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
                 raw: oh.raw * ratio * ticks,
                 type: oh.type,
               });
+            }
+            // Kraken Slayer: procs every Nth dagger, also scaled by OnHitRatio
+            const kraken = computeKrakenProcDamage(activeStats, items, targetCurrentHP, targetMaxHP);
+            if (kraken) {
+              const procs = Math.floor(ticks / kraken.procEvery);
+              if (procs > 0) {
+                addDmg({
+                  abilityKey: step,
+                  abilityName: `Kraken Slayer (${Math.round(ratio * 100)}% × ${procs} proc${procs > 1 ? 's' : ''})`,
+                  raw: kraken.raw * ratio * procs,
+                  type: kraken.type,
+                });
+              }
             }
           }
         }
