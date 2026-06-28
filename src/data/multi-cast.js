@@ -31,7 +31,7 @@ export const MULTI_CAST = {
   },
   Katarina: {
     R: [
-      { castKey: 'R1', label: 'R1', name: 'Death Lotus (per tick)', calcName: 'DamageCalc' },
+      { castKey: 'R1', label: 'R1', name: 'Death Lotus (5 hits)', calcName: 'DamageCalc', multiplier: 5 },
       { castKey: 'R5', label: 'R', name: 'Death Lotus (full channel)', calcName: 'DamageCalc', multiplier: 15 },
     ],
   },
