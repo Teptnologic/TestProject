@@ -806,6 +806,21 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         result.abilityName = `${ability.name} (${cast.label})`;
         if (cast.damageType) result.type = cast.damageType;
         if (cast.multiplier) result.raw *= cast.multiplier;
+        // Katarina R is mixed damage: DamageCalc (magic) + ADDamageCalc (physical) per tick.
+        // Computed magic portion already added above; now add the AD portion.
+        if (champId === 'Katarina' && baseKey === 'R' && ability.calculations?.ADDamageCalc) {
+          const ticks = cast.multiplier || 1;
+          const attackerWithSpell = { ...activeStats, spellDataValues: ability.dataValues };
+          const adPerTick = evaluateCalc(ability.calculations.ADDamageCalc, rank, attackerWithSpell, charLevel);
+          if (adPerTick > 0) {
+            addDmg({
+              abilityKey: step,
+              abilityName: `${ability.name} (${cast.label}) AD portion`,
+              raw: adPerTick * ticks,
+              type: 'physical',
+            });
+          }
+        }
         // Katarina R applies on-hit per dagger at OnHitRatio; full channel = ~15 ticks
         if (champId === 'Katarina' && baseKey === 'R') {
           const onHitRatioArr = ability.dataValues?.OnHitRatio;
