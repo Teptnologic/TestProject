@@ -410,6 +410,9 @@ function computeItemProcs(attacker, items, target, abilityKey) {
 
     // General proc items (Luden's, Stormsurge, etc.)
     // Skip items with an active ability — those are added manually via ITEM_ combo steps
+    // Skip on-hit-only items — those are handled in computeAADamage on basic attacks
+    const ON_HIT_ONLY = new Set(['kraken', 'botrk', 'nashors', 'witsEnd', 'voltaicCyclosword']);
+    if (ON_HIT_ONLY.has(item._overrides?.passive?.type)) continue;
     if (bin.calculations && !item._overrides?.active) {
       const found = pickItemDamageCalc(bin.calculations);
       if (!found) continue;
