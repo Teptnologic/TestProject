@@ -208,6 +208,39 @@ function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP,
   return results;
 }
 
+// On-hit item damage that applies per-hit regardless of nth-hit counters.
+// Used by abilities that proc on-hits at a reduced ratio (e.g. Katarina R).
+function computeFlatOnHitDamage(attacker, items, targetCurrentHP) {
+  const results = [];
+  for (const item of items || []) {
+    const ov = item?._overrides;
+    const p = ov?.passive;
+    if (!p) continue;
+    switch (p.type) {
+      case 'nashors':
+        results.push({
+          name: `Nashor's`,
+          raw: (p.flatOnHit || 0) + (p.apRatio || 0) * (attacker.ap || 0),
+          type: 'magic',
+        });
+        break;
+      case 'witsEnd': {
+        const lvl = attacker.level || 1;
+        const min = p.flatOnHitMin || 15;
+        const max = p.flatOnHitMax || 80;
+        results.push({ name: `Wit's End`, raw: min + (max - min) * ((lvl - 1) / 17), type: 'magic' });
+        break;
+      }
+      case 'botrk': {
+        const hp = targetCurrentHP || 2000;
+        results.push({ name: `BotRK`, raw: hp * (p.currentHpRatioRanged || 0.06), type: 'physical' });
+        break;
+      }
+    }
+  }
+  return results;
+}
+
 function ordSuffix(n) {
   if (n % 100 >= 11 && n % 100 <= 13) return 'th';
   switch (n % 10) {
@@ -756,6 +789,22 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         result.abilityName = `${ability.name} (${cast.label})`;
         if (cast.damageType) result.type = cast.damageType;
         if (cast.multiplier) result.raw *= cast.multiplier;
+        // Katarina R applies on-hit per dagger at OnHitRatio; full channel = ~15 ticks
+        if (champId === 'Katarina' && baseKey === 'R') {
+          const onHitRatioArr = ability.dataValues?.OnHitRatio;
+          const ratio = onHitRatioArr ? (onHitRatioArr[rank] ?? 0) : 0;
+          const ticks = cast.multiplier || 1;
+          if (ratio > 0) {
+            for (const oh of computeFlatOnHitDamage(activeStats, items, targetCurrentHP)) {
+              addDmg({
+                abilityKey: step,
+                abilityName: `${oh.name} on-hit (${Math.round(ratio * 100)}% × ${ticks})`,
+                raw: oh.raw * ratio * ticks,
+                type: oh.type,
+              });
+            }
+          }
+        }
         // Execute scaling: damage scales linearly from 1× to maxMultiplier× based on missing HP
         if (cast.execute) {
           const missingPct = targetMaxHP > 0 ? Math.max(0, 1 - targetCurrentHP / targetMaxHP) : 0;
