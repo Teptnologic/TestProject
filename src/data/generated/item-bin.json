@@ -4174,7 +4174,7 @@
           }
         ]
       },
-      "{05809103}": {
+      "ProcDmg": {
         "__type": "GameCalculation",
         "mFormulaParts": [
           {
