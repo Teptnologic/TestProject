@@ -131,6 +131,9 @@ export function totalStats(champStats, level, items, championId, ranks, adaptive
     ap,
     crit: totalCrit,
     attackspeed: finalAS,
+    // bonusAS as a fraction of the champion's raw base AS — used by
+    // formulas like Katarina R AD portion that scale with total bonus AS
+    bonusAS: finalAS / (champStats.attackspeed || base.attackspeed) - 1,
     bonusHP: bonus.hp,
     lethality,
     flatMagicPen,
