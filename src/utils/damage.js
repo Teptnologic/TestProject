@@ -514,6 +514,9 @@ function statValue(attacker, statName) {
     case 'BonusAD': return attacker.bonusAD || 0;
     case 'BonusHP': return attacker.bonusHP || 0;
     case 'MaxHP': return attacker.hp || 0;
+    case 'AS':
+    case 'AS_Pct':
+    case 'BonusAS': return attacker.bonusAS || 0;
     default: return 0;
   }
 }
@@ -571,6 +574,22 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
       case 'statBySubPart': {
         const coeff = evaluateCalc({ parts: [part.subPart] }, rank, attacker, charLevel);
         total += statValue(attacker, part.stat) * coeff;
+        break;
+      }
+      case 'sum': {
+        let sum = 0;
+        for (const sp of part.subparts || []) {
+          sum += evaluateCalc({ parts: [sp] }, rank, attacker, charLevel);
+        }
+        total += sum;
+        break;
+      }
+      case 'product': {
+        let product = 1;
+        for (const sp of part.subparts || []) {
+          product *= evaluateCalc({ parts: [sp] }, rank, attacker, charLevel);
+        }
+        total += product;
         break;
       }
       case 'number': total += part.value || 0; break;

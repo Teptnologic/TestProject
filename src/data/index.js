@@ -82,6 +82,10 @@ function normalizeFormulaPart(p) {
       return { kind: 'statBySubPart', stat: resolveStatName(p.mStat, p.mStatFormula), subPart: normalizeFormulaPart(p.mSubpart) };
     case 'NumberCalculationPart':
       return { kind: 'number', value: p.mNumber };
+    case 'SumOfSubPartsCalculationPart':
+      return { kind: 'sum', subparts: (p.mSubparts || []).map(normalizeFormulaPart).filter(Boolean) };
+    case 'ProductOfSubPartsCalculationPart':
+      return { kind: 'product', subparts: [p.mPart1, p.mPart2].filter(Boolean).map(normalizeFormulaPart).filter(Boolean) };
     default:
       return { kind: 'unknown', type: p.__type };
   }
@@ -287,6 +291,10 @@ function normalizeItemFormulaPart(p) {
       return { kind: 'byCharLevelInterp', start: p.mStartValue, end: p.mEndValue };
     case 'NumberCalculationPart':
       return { kind: 'number', value: p.mNumber };
+    case 'SumOfSubPartsCalculationPart':
+      return { kind: 'sum', subparts: (p.mSubparts || []).map(normalizeFormulaPart).filter(Boolean) };
+    case 'ProductOfSubPartsCalculationPart':
+      return { kind: 'product', subparts: [p.mPart1, p.mPart2].filter(Boolean).map(normalizeFormulaPart).filter(Boolean) };
     default:
       return null;
   }
