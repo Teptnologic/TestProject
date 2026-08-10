@@ -34,6 +34,20 @@ const CHAMPION_AA = {
     executeThreshold: [0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15],
     executePerStack: 0.005,
   },
+  Quinn: {
+    // Passive (Harrier): Valor marks a target and Quinn's next basic attack
+    // against it deals bonus physical damage. The numbers come from the passive's
+    // own BonusDamage calc (15→120 by level + 40% bonus AD).
+    harrier: {
+      calcName: 'BonusDamage',
+      damageType: 'physical',
+      // Q marks the first enemy hit, E marks its dash target, and R's Skystrike
+      // recast marks every champion it hits.
+      appliedBy: ['Q', 'E', 'R'],
+      // Valor's periodic mark is up going into a fight, so the opener procs it.
+      startsMarked: true,
+    },
+  },
   Vayne: {
     appliesStacks: ['E'],
     onHits: [
@@ -723,6 +737,26 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
   const champId = champion?.id;
   let activeStats = attackerStats;
 
+  // Quinn Harrier: a single mark sits on the target and is spent by the next hit.
+  const harrier = CHAMPION_AA[champId]?.harrier || null;
+  let harrierMark = harrier?.startsMarked || false;
+
+  // Spend the Harrier mark, if any, and add its bonus damage to `sourceKey`.
+  function procHarrier(sourceKey) {
+    if (!harrier || !harrierMark) return false;
+    harrierMark = false;
+    const passive = champion.abilities.find((a) => a.key === 'P');
+    const result = passive && computeAbilityDamage(passive, 1, activeStats, charLevel, harrier.calcName);
+    if (!result?.raw) return false;
+    addDmg({
+      abilityKey: sourceKey,
+      abilityName: passive.name,
+      raw: result.raw,
+      type: harrier.damageType || result.type,
+    });
+    return true;
+  }
+
   for (const step of combo) {
     if (step === 'AA' || step === 'AA4') {
       const forceIndex = step === 'AA4' ? 3 : aaCount;
@@ -757,6 +791,8 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
           lockeMarks = 0;
         }
       }
+      // Quinn passive: the AA against a Harrier-marked target carries bonus damage
+      procHarrier('AA');
       if (lastWasSpell) {
         const sb = computeSpellbladeDamage(activeStats, items);
         if (sb) addDmg({ abilityKey: 'AA', abilityName: sb.name + ' Proc', raw: sb.raw, type: sb.type });
@@ -795,6 +831,21 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         attackdamage: activeStats.attackdamage + rBonusAD,
         bonusAD: (activeStats.bonusAD || 0) + rBonusAD,
       };
+    }
+
+    // Quinn P: Harrier only pays out on a marked target, and it is the same mark
+    // an auto attack would spend — so an explicit P step never double-dips.
+    if (harrier && baseKey === 'P') {
+      if (!procHarrier('P')) {
+        steps.push({
+          abilityKey: 'P',
+          abilityName: `${ability.name} (no mark)`,
+          type: harrier.damageType,
+          raw: 0,
+          post: 0,
+        });
+      }
+      continue;
     }
 
     // Locke P: scales with missing HP, interpolate between base and empowered calcs
@@ -913,6 +964,8 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
           }
         }
       }
+      // Quinn: Q, E and R (Skystrike) mark the target with Harrier
+      if (harrier?.appliedBy.includes(baseKey)) harrierMark = true;
       // Locke: Q applies marks, E2 consumes marks, R executes with mark scaling
       if (champId === 'Locke') {
         if (baseKey === 'Q') {
