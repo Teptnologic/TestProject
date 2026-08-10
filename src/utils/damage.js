@@ -208,6 +208,56 @@ function computeAADamage(attacker, items, aaIndex, targetCurrentHP, targetMaxHP,
   return results;
 }
 
+// Per-proc Kraken Slayer damage (3rd-hit). Returns null if no Kraken equipped.
+function computeKrakenProcDamage(attacker, items, targetCurrentHP, targetMaxHP) {
+  for (const item of items || []) {
+    if (item?._overrides?.passive?.type !== 'kraken') continue;
+    const bin = item?.bin;
+    if (!bin?.calculations?.DamageAmount) return null;
+    let raw = evaluateItemCalc(bin.calculations.DamageAmount, bin.dataValues || {}, attacker, attacker.level || 1);
+    const maxAmp = bin?.dataValues?.MaxAmpNumber || 1;
+    if (maxAmp > 1 && targetMaxHP > 0) {
+      const missingPct = Math.max(0, 1 - (targetCurrentHP || targetMaxHP) / targetMaxHP);
+      raw *= 1 + (maxAmp - 1) * missingPct;
+    }
+    return { raw, type: item._overrides.passive.damageType || 'physical', procEvery: bin?.dataValues?.AttackCount || 3 };
+  }
+  return null;
+}
+
+// On-hit item damage that applies per-hit regardless of nth-hit counters.
+// Used by abilities that proc on-hits at a reduced ratio (e.g. Katarina R).
+function computeFlatOnHitDamage(attacker, items, targetCurrentHP) {
+  const results = [];
+  for (const item of items || []) {
+    const ov = item?._overrides;
+    const p = ov?.passive;
+    if (!p) continue;
+    switch (p.type) {
+      case 'nashors':
+        results.push({
+          name: `Nashor's`,
+          raw: (p.flatOnHit || 0) + (p.apRatio || 0) * (attacker.ap || 0),
+          type: 'magic',
+        });
+        break;
+      case 'witsEnd': {
+        const lvl = attacker.level || 1;
+        const min = p.flatOnHitMin || 15;
+        const max = p.flatOnHitMax || 80;
+        results.push({ name: `Wit's End`, raw: min + (max - min) * ((lvl - 1) / 17), type: 'magic' });
+        break;
+      }
+      case 'botrk': {
+        const hp = targetCurrentHP || 2000;
+        results.push({ name: `BotRK`, raw: hp * (p.currentHpRatioRanged || 0.06), type: 'physical' });
+        break;
+      }
+    }
+  }
+  return results;
+}
+
 function ordSuffix(n) {
   if (n % 100 >= 11 && n % 100 <= 13) return 'th';
   switch (n % 10) {
@@ -410,6 +460,9 @@ function computeItemProcs(attacker, items, target, abilityKey) {
 
     // General proc items (Luden's, Stormsurge, etc.)
     // Skip items with an active ability — those are added manually via ITEM_ combo steps
+    // Skip on-hit-only items — those are handled in computeAADamage on basic attacks
+    const ON_HIT_ONLY = new Set(['kraken', 'botrk', 'nashors', 'witsEnd', 'voltaicCyclosword']);
+    if (ON_HIT_ONLY.has(item._overrides?.passive?.type)) continue;
     if (bin.calculations && !item._overrides?.active) {
       const found = pickItemDamageCalc(bin.calculations);
       if (!found) continue;
@@ -461,6 +514,9 @@ function statValue(attacker, statName) {
     case 'BonusAD': return attacker.bonusAD || 0;
     case 'BonusHP': return attacker.bonusHP || 0;
     case 'MaxHP': return attacker.hp || 0;
+    case 'AS':
+    case 'AS_Pct':
+    case 'BonusAS': return attacker.bonusAS || 0;
     default: return 0;
   }
 }
@@ -518,6 +574,22 @@ export function evaluateCalc(calc, rank, attacker, charLevel) {
       case 'statBySubPart': {
         const coeff = evaluateCalc({ parts: [part.subPart] }, rank, attacker, charLevel);
         total += statValue(attacker, part.stat) * coeff;
+        break;
+      }
+      case 'sum': {
+        let sum = 0;
+        for (const sp of part.subparts || []) {
+          sum += evaluateCalc({ parts: [sp] }, rank, attacker, charLevel);
+        }
+        total += sum;
+        break;
+      }
+      case 'product': {
+        let product = 1;
+        for (const sp of part.subparts || []) {
+          product *= evaluateCalc({ parts: [sp] }, rank, attacker, charLevel);
+        }
+        total += product;
         break;
       }
       case 'number': total += part.value || 0; break;
@@ -753,6 +825,50 @@ export function computeCombo(combo, champion, ranks, attackerStats, target, char
         result.abilityName = `${ability.name} (${cast.label})`;
         if (cast.damageType) result.type = cast.damageType;
         if (cast.multiplier) result.raw *= cast.multiplier;
+        // Katarina R is mixed damage: DamageCalc (magic) + ADDamageCalc (physical) per tick.
+        // Computed magic portion already added above; now add the AD portion.
+        if (champId === 'Katarina' && baseKey === 'R' && ability.calculations?.ADDamageCalc) {
+          const ticks = cast.multiplier || 1;
+          const attackerWithSpell = { ...activeStats, spellDataValues: ability.dataValues };
+          const adPerTick = evaluateCalc(ability.calculations.ADDamageCalc, rank, attackerWithSpell, charLevel);
+          if (adPerTick > 0) {
+            addDmg({
+              abilityKey: step,
+              abilityName: `${ability.name} (${cast.label}) AD portion`,
+              raw: adPerTick * ticks,
+              type: 'physical',
+            });
+          }
+        }
+        // Katarina R applies on-hit per dagger at OnHitRatio; full channel = ~15 ticks
+        if (champId === 'Katarina' && baseKey === 'R') {
+          const onHitRatioArr = ability.dataValues?.OnHitRatio;
+          const ratio = onHitRatioArr ? (onHitRatioArr[rank] ?? 0) : 0;
+          const ticks = cast.multiplier || 1;
+          if (ratio > 0) {
+            for (const oh of computeFlatOnHitDamage(activeStats, items, targetCurrentHP)) {
+              addDmg({
+                abilityKey: step,
+                abilityName: `${oh.name} on-hit (${Math.round(ratio * 100)}% × ${ticks})`,
+                raw: oh.raw * ratio * ticks,
+                type: oh.type,
+              });
+            }
+            // Kraken Slayer: procs every Nth dagger, also scaled by OnHitRatio
+            const kraken = computeKrakenProcDamage(activeStats, items, targetCurrentHP, targetMaxHP);
+            if (kraken) {
+              const procs = Math.floor(ticks / kraken.procEvery);
+              if (procs > 0) {
+                addDmg({
+                  abilityKey: step,
+                  abilityName: `Kraken Slayer (${Math.round(ratio * 100)}% × ${procs} proc${procs > 1 ? 's' : ''})`,
+                  raw: kraken.raw * ratio * procs,
+                  type: kraken.type,
+                });
+              }
+            }
+          }
+        }
         // Execute scaling: damage scales linearly from 1× to maxMultiplier× based on missing HP
         if (cast.execute) {
           const missingPct = targetMaxHP > 0 ? Math.max(0, 1 - targetCurrentHP / targetMaxHP) : 0;
