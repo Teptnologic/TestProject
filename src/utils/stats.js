@@ -67,27 +67,19 @@ export function totalStats(champStats, level, items, championId, ranks, adaptive
         else bonus[mapped] = (bonus[mapped] || 0) + val;
       }
     }
-    // Bin data: direct stats from CDragon (preferred, auto-updated)
+    // Pen + haste: CDragon bin data is preferred (auto-updated), with the manual
+    // overrides filling in per stat. The bin often carries only some of an item's
+    // stats — Hubris exposes abilityHaste but not its lethality, for example — so
+    // this merges field by field rather than treating any bin data as complete.
     const ds = item.bin?.directStats;
-    if (ds) {
-      lethality += ds.lethality || 0;
-      flatMagicPen += ds.flatMagicPen || 0;
-      magicPenPct += ds.pctMagicPen || 0;
-      armorPenPct += ds.pctArmorPen || ds.pctBonusArmorPen || 0;
-      abilityHaste += ds.abilityHaste || 0;
-    }
-    // Fallback: manual overrides for pen, haste, passives
     const ov = item._overrides;
-    if (ov) {
-      if (!ds) {
-        lethality += ov.lethality || 0;
-        flatMagicPen += ov.flatMagicPen || 0;
-        magicPenPct += ov.pctMagicPen || ov.magicPenPct || 0;
-        armorPenPct += ov.pctArmorPen || ov.armorPenPct || 0;
-        abilityHaste += ov.abilityHaste || 0;
-      }
-      if (ov.passive?.type === 'rabadons') hasRabadons = true;
-    }
+    const pick = (fromBin, fromOverride) => fromBin || fromOverride || 0;
+    lethality += pick(ds?.lethality, ov?.lethality);
+    flatMagicPen += pick(ds?.flatMagicPen, ov?.flatMagicPen);
+    magicPenPct += pick(ds?.pctMagicPen, ov?.pctMagicPen || ov?.magicPenPct);
+    armorPenPct += pick(ds?.pctArmorPen || ds?.pctBonusArmorPen, ov?.pctArmorPen || ov?.armorPenPct);
+    abilityHaste += pick(ds?.abilityHaste, ov?.abilityHaste);
+    if (ov?.passive?.type === 'rabadons') hasRabadons = true;
   }
 
   // Adaptive force from rune shards: each shard = +5.4 AD or +9 AP
