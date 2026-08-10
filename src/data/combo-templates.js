@@ -42,6 +42,15 @@ export const COMBO_TEMPLATES = {
     { name: 'Full Combo', keys: ['W', 'Q', 'AA', 'AA', 'AA', 'AA'] },
     { name: 'Ult (all 4)', keys: ['R1', 'R1', 'R1', 'R4'] },
   ],
+  Quinn: [
+    // Harrier procs on the auto attack that follows a mark (Q, E, R or Valor's
+    // periodic mark), so every AA below lands on a marked target.
+    { name: 'Harrier Poke', keys: ['Q', 'AA'] },
+    { name: 'Short Trade', keys: ['AA', 'Q', 'AA'] },
+    { name: 'Vault Trade', keys: ['E', 'AA', 'Q', 'AA'] },
+    { name: 'Full Combo', keys: ['E', 'AA', 'Q', 'AA', 'AA', 'R', 'AA'] },
+    { name: 'All-In (R engage)', keys: ['R', 'AA', 'E', 'AA', 'Q', 'AA', 'AA'] },
+  ],
   Locke: [
     { name: 'Poke', keys: ['Q', 'AA'] },
     { name: 'Short Trade', keys: ['Q', 'Q', 'AA'] },
