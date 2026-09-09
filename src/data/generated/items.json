@@ -794,7 +794,7 @@
     "name": "Bastionbreaker",
     "description": "<mainText><stats><attention>55</attention> Attack Damage<br><attention>22</attention> Lethality<br><attention>15</attention> Ability Haste</stats><br><br><passive>Shaped Charge</passive> (0s)<br>Dealing Ability damage to a Champion or Epic Monster deals an additional <trueDamage> true damage</trueDamage>.<br><br><passive>Sabotage</passive><br>Taking down a champion within 3 seconds of damaging them grants Sabotage for 90 seconds. While you have Sabotage, your next Attack against an Epic Monster or Turret deals an additional <trueDamage> true damage</trueDamage> over 3 seconds. </mainText>",
     "plaintext": "",
-    "gold": 3200,
+    "gold": 3000,
     "stats": {
       "FlatPhysicalDamageMod": 55
     },
@@ -860,7 +860,7 @@
     "name": "Protoplasm Harness",
     "description": "<mainText><stats><attention>600</attention> Health<br><attention>20</attention> Ability Haste</stats><br><br><passive>Lifeline</passive> (0s)<br>Taking damage that would reduce your Health below 30% causes you to gain <health> maximum Health</health> for 5 seconds, then heal <health> Health</health> over the duration. While regenerating Health, you gain 15% increased Size, 10% Move Speed, and 25% Tenacity. </mainText>",
     "plaintext": "",
-    "gold": 2500,
+    "gold": 2600,
     "stats": {
       "FlatHPPoolMod": 600
     },
@@ -924,12 +924,12 @@
   {
     "id": 3006,
     "name": "Berserker's Greaves",
-    "description": "<mainText><stats><attention>25%</attention> Attack Speed<br><attention>45</attention> Move Speed</stats><br><br></mainText>",
+    "description": "<mainText><stats><attention>30%</attention> Attack Speed<br><attention>45</attention> Move Speed</stats><br><br></mainText>",
     "plaintext": "Enhances Move Speed and Attack Speed",
     "gold": 1100,
     "stats": {
       "FlatMovementSpeedMod": 45,
-      "PercentAttackSpeedMod": 0.25
+      "PercentAttackSpeedMod": 0.3
     },
     "tags": [
       "AttackSpeed",
@@ -1028,12 +1028,12 @@
   {
     "id": 3032,
     "name": "Yun Tal Wildarrows",
-    "description": "<mainText><stats><attention>50</attention> Attack Damage<br><attention>40%</attention> Attack Speed<br><attention>0%</attention> Critical Strike Chance</stats><br><br><passive>Practice Makes Lethal</passive><br>On-Attack, gain Critical Strike Chance permanently up to 25%.<br><br><passive>Flurry</passive><br>On-Attacking an enemy champion, gain 30% Attack Speed for 6 seconds (30 second cooldown). <br>Attacks reduce this cooldown by 1 second, increased to 2 seconds for Critical Strikes.</mainText>",
+    "description": "<mainText><stats><attention>50</attention> Attack Damage<br><attention>45%</attention> Attack Speed<br><attention>0%</attention> Critical Strike Chance</stats><br><br><passive>Practice Makes Lethal</passive><br>On-Attack, gain Critical Strike Chance permanently up to 25%.<br><br><passive>Flurry</passive><br>On-Attacking an enemy champion, gain 30% Attack Speed for 6 seconds (30 second cooldown). <br>Attacks reduce this cooldown by 1 second, increased to 2 seconds for Critical Strikes.</mainText>",
     "plaintext": "",
-    "gold": 3100,
+    "gold": 3000,
     "stats": {
       "FlatPhysicalDamageMod": 50,
-      "PercentAttackSpeedMod": 0.4
+      "PercentAttackSpeedMod": 0.45
     },
     "tags": [
       "Damage",
@@ -1264,7 +1264,7 @@
     "name": "Sunfire Aegis",
     "description": "<mainText><stats><attention>350</attention> Health<br><attention>50</attention> Armor<br><attention>10</attention> Ability Haste</stats><br><br><passive>Immolate</passive><br>After taking or dealing damage, deal <magicDamage>magic damage</magicDamage> per second to nearby enemies for 3 seconds. </mainText>",
     "plaintext": "High armor. Constantly deals damage to nearby enemies. Immobilize enemies to release a wave of damaging flame",
-    "gold": 2700,
+    "gold": 2800,
     "stats": {
       "FlatHPPoolMod": 350,
       "FlatArmorMod": 50
@@ -1293,12 +1293,12 @@
   {
     "id": 3071,
     "name": "Black Cleaver",
-    "description": "<mainText><stats><attention>40</attention> Attack Damage<br><attention>400</attention> Health<br><attention>20</attention> Ability Haste</stats><br><br><passive>Carve</passive><br>Dealing <physicalDamage>physical damage</physicalDamage> to champions reduces the target's <scaleArmor>Armor by 6%</scaleArmor> for 6 seconds. (stacks 5 times).<br><br><passive>Fervor</passive><br>Dealing <physicalDamage>physical damage</physicalDamage> grants <speed>20 Move Speed</speed> for 2 seconds.</mainText>",
+    "description": "<mainText><stats><attention>45</attention> Attack Damage<br><attention>400</attention> Health<br><attention>20</attention> Ability Haste</stats><br><br><passive>Carve</passive><br>Dealing <physicalDamage>physical damage</physicalDamage> to champions reduces the target's <scaleArmor>Armor by 6%</scaleArmor> for 6 seconds. (stacks 5 times).<br><br><passive>Fervor</passive><br>Dealing <physicalDamage>physical damage</physicalDamage> grants <speed> Move Speed</speed> for 2 seconds.</mainText>",
     "plaintext": "Dealing physical damage to enemy champions reduces their Armor",
     "gold": 3000,
     "stats": {
       "FlatHPPoolMod": 400,
-      "FlatPhysicalDamageMod": 40
+      "FlatPhysicalDamageMod": 45
     },
     "tags": [
       "Health",
@@ -1394,11 +1394,11 @@
   {
     "id": 3077,
     "name": "Tiamat",
-    "description": "<mainText><stats><attention>20</attention> Attack Damage</stats><br><br><passive>Cleave</passive><br>Attacks deal <physicalDamage>physical damage</physicalDamage> to nearby enemies.<br><active>Crescent</active><br>Deal <physicalDamage>physical damage</physicalDamage> to enemies around you.</mainText>",
+    "description": "<mainText><stats><attention>25</attention> Attack Damage</stats><br><br><passive>Cleave</passive><br>Attacks deal <physicalDamage>physical damage</physicalDamage> to nearby enemies.<br><active>Crescent</active><br>Deal <physicalDamage>physical damage</physicalDamage> to enemies around you.</mainText>",
     "plaintext": "Melee attacks hit nearby enemies",
     "gold": 1200,
     "stats": {
-      "FlatPhysicalDamageMod": 20
+      "FlatPhysicalDamageMod": 25
     },
     "tags": [
       "Damage",
@@ -1470,13 +1470,13 @@
   {
     "id": 3085,
     "name": "Runaan's Hurricane",
-    "description": "<mainText><stats><attention>40%</attention> Attack Speed<br><attention>25%</attention> Critical Strike Chance<br><attention>4%</attention> Move Speed</stats><br><br><passive>Wind's Fury</passive><br>Attacks fire bolts at 2 additional enemies near the target.<br>Each bolt deals <physicalDamage>physical damage</physicalDamage> and applies <OnHit>On-Hit</OnHit> effects.</mainText>",
+    "description": "<mainText><stats><attention>40%</attention> Attack Speed<br><attention>25%</attention> Critical Strike Chance<br><attention>5%</attention> Move Speed</stats><br><br><passive>Wind's Fury</passive><br>Attacks fire bolts at 2 additional enemies near the target.<br>Each bolt deals <physicalDamage>physical damage</physicalDamage> and applies <OnHit>On-Hit</OnHit> effects.</mainText>",
     "plaintext": "Ranged attacks fire two bolts at nearby enemies",
     "gold": 2650,
     "stats": {
       "FlatCritChanceMod": 0.25,
       "PercentAttackSpeedMod": 0.4,
-      "PercentMovementSpeedMod": 0.04
+      "PercentMovementSpeedMod": 0.05
     },
     "tags": [
       "CriticalStrike",
@@ -1570,15 +1570,15 @@
     ]
   },
   {
-    "id": 3097,
+    "id": 3095,
     "name": "Stormrazor",
-    "description": "<mainText><stats><attention>50</attention> Attack Damage<br><attention>20%</attention> Attack Speed<br><attention>25%</attention> Critical Strike Chance</stats><br><br><passive>Energized</passive><br>Moving and Attacking generates an <keyword>Energized Attack</keyword>.<br><br><passive>Bolt</passive><br>Your <keyword>Energized Attack</keyword> applies <magicDamage> bonus magic damage</magicDamage> and grants <speed>45% Movement Speed</speed> for 1.5 seconds.<br></mainText>",
-    "plaintext": "Periodically kill enemy minions to heal and grant gold to a nearby ally",
+    "description": "<mainText><stats><attention>50</attention> Attack Damage<br><attention>25%</attention> Attack Speed<br><attention>25%</attention> Critical Strike Chance</stats><br><br><passive>Energized</passive><br>Moving and Attacking generates an <keyword>Energized Attack</keyword>.<br><br><passive>Bolt</passive><br>Your <keyword>Energized Attack</keyword> applies <magicDamage> bonus magic damage</magicDamage> and grants <speed>45% Movement Speed</speed> for 1.5 seconds.<br></mainText>",
+    "plaintext": "Tremendously empower other Energized effects.",
     "gold": 3200,
     "stats": {
       "FlatCritChanceMod": 0.25,
       "FlatPhysicalDamageMod": 50,
-      "PercentAttackSpeedMod": 0.2
+      "PercentAttackSpeedMod": 0.25
     },
     "tags": [
       "Damage",
@@ -2031,12 +2031,12 @@
   {
     "id": 3152,
     "name": "Hextech Rocketbelt",
-    "description": "<mainText><stats><attention>70</attention> Ability Power<br><attention>300</attention> Health<br><attention>20</attention> Ability Haste</stats><br><br><active>Supersonic</active><br>Dash in target direction, unleashing missiles that deal <magicDamage>magic damage</magicDamage>.</mainText>",
+    "description": "<mainText><stats><attention>60</attention> Ability Power<br><attention>350</attention> Health<br><attention>20</attention> Ability Haste</stats><br><br><active>Supersonic</active><br>Dash in target direction, unleashing missiles that deal <magicDamage>magic damage</magicDamage>.</mainText>",
     "plaintext": "Activate to dash forward and unleash a fiery explosion",
     "gold": 2650,
     "stats": {
-      "FlatHPPoolMod": 300,
-      "FlatMagicDamageMod": 70
+      "FlatHPPoolMod": 350,
+      "FlatMagicDamageMod": 60
     },
     "tags": [
       "Health",
@@ -2165,7 +2165,7 @@
   {
     "id": 3168,
     "name": "Immortal Path",
-    "description": "<mainText><stats><attention>45</attention> Move Speed<br><attention>4%</attention> Omnivamp</stats><br><br><passive>Slay</passive><br>Gain 0.6% Omnivamp on Champion takedown, stacking up to 10 times.<br><br><passive>Now and Forever</passive><br>While above half Health, deal 5% increased damage. <br><br>While below half Health, gain 15% increased healing, shielding, and regeneration.</mainText>",
+    "description": "<mainText><stats><attention>45</attention> Move Speed<br><attention>4%</attention> Omnivamp</stats><br><br><passive>Slay</passive><br>Gain 0.6% Omnivamp on Champion takedown, stacking up to 10 times.<br><br><passive>Now and Forever</passive><br>While above half Health, deal 4% increased damage. <br><br>While below half Health, gain 12% increased healing, shielding, and regeneration.</mainText>",
     "plaintext": "",
     "gold": 1000,
     "stats": {
@@ -2180,7 +2180,7 @@
   {
     "id": 3170,
     "name": "Swiftmarch",
-    "description": "<mainText><stats><attention>65</attention> Move Speed</stats><br><br><passive>Fleetfooted</passive><br>Reduce the effectiveness of <keyword>Slows</keyword> by 40%.<br><br><passive>Noxian Fervor</passive><br>Gain 5% of your <speed>Move Speed</speed> as Adaptive Force.</mainText>",
+    "description": "<mainText><stats><attention>65</attention> Move Speed</stats><br><br><passive>Fleetfooted</passive><br>Reduce the effectiveness of <keyword>Slows</keyword> by 25%.<br><br><passive>Noxian Fervor</passive><br>Gain 5% of your <speed>Move Speed</speed> as Adaptive Force.</mainText>",
     "plaintext": "Improves defense and reduces duration of disabling effects",
     "gold": 1000,
     "stats": {
@@ -2207,12 +2207,12 @@
   {
     "id": 3172,
     "name": "Gunmetal Greaves",
-    "description": "<mainText><stats><attention>40%</attention> Attack Speed<br><attention>45</attention> Move Speed<br><attention>5%</attention> Life Steal</stats><br><br><passive>Noxian Gait</passive><br>Attacks against Champions grant <speed>Move Speed</speed> <OnHit>On-Hit</OnHit> decaying over 2 seconds.</mainText>",
+    "description": "<mainText><stats><attention>45%</attention> Attack Speed<br><attention>45</attention> Move Speed<br><attention>5%</attention> Life Steal</stats><br><br></mainText>",
     "plaintext": "Mobility and Tenacity",
     "gold": 1100,
     "stats": {
       "FlatMovementSpeedMod": 45,
-      "PercentAttackSpeedMod": 0.4,
+      "PercentAttackSpeedMod": 0.45,
       "PercentLifeStealMod": 0.05
     },
     "tags": [
@@ -2224,11 +2224,11 @@
   {
     "id": 3173,
     "name": "Chainlaced Crushers",
-    "description": "<mainText><stats><attention>30</attention> Magic Resist<br><attention>45</attention> Move Speed<br><attention>30%</attention> Tenacity</stats><br><br><passive>Noxian Persistence</passive> (0s)<br>After taking magic damage from a Champion, gain a <shield></shield> <magicDamage>magic</magicDamage> <shield>shield</shield> for 5 seconds.</mainText>",
+    "description": "<mainText><stats><attention>25</attention> Magic Resist<br><attention>45</attention> Move Speed<br><attention>30%</attention> Tenacity</stats><br><br><passive>Noxian Persistence</passive> (0s)<br>After taking magic damage from a Champion, gain a <shield></shield> <magicDamage>magic</magicDamage> <shield>shield</shield> for 5 seconds.</mainText>",
     "plaintext": "Increases Move Speed and Cooldown Reduction",
     "gold": 1250,
     "stats": {
-      "FlatSpellBlockMod": 30,
+      "FlatSpellBlockMod": 25,
       "FlatMovementSpeedMod": 45
     },
     "tags": [
@@ -2256,7 +2256,7 @@
   {
     "id": 3175,
     "name": "Spellslinger's Shoes",
-    "description": "<mainText><stats><attention>18</attention> Magic Penetration<br><attention>8%</attention> Magic Penetration<br><attention>45</attention> Move Speed</stats><br><br></mainText>",
+    "description": "<mainText><stats><attention>20</attention> Magic Penetration<br><attention>8%</attention> Magic Penetration<br><attention>45</attention> Move Speed</stats><br><br></mainText>",
     "plaintext": "",
     "gold": 1100,
     "stats": {
@@ -2394,7 +2394,7 @@
   {
     "id": 3302,
     "name": "Terminus",
-    "description": "<mainText><stats><attention>30</attention> Attack Damage<br><attention>35%</attention> Attack Speed</stats><br><br><passive>Shadow</passive><br>Attacks deal <magicDamage>30 bonus magic damage</magicDamage> <OnHit>On-Hit</OnHit>.<br><br><passive>Juxtaposition</passive><br>Alternate between <keywordMajor>Light</keywordMajor> and <keywordMajor>Dark</keywordMajor> Attacks against champions: <li><keywordMajor>Light</keywordMajor> Attacks grant <scaleArmor>Armor</scaleArmor> and <scaleMR>Magic Resist</scaleMR> for 5s. <li><keywordMajor>Dark</keywordMajor> Attacks grant 10% <scaleArmor>Armor Penetration</scaleArmor> and <scaleMR>Magic Penetration</scaleMR> for 5s. </mainText>",
+    "description": "<mainText><stats><attention>30</attention> Attack Damage<br><attention>35%</attention> Attack Speed</stats><br><br><passive>Shadow</passive><br>Attacks deal <magicDamage> bonus magic damage</magicDamage> <OnHit>On-Hit</OnHit>.<br><br><passive>Juxtaposition</passive><br>Alternate between <keywordMajor>Light</keywordMajor> and <keywordMajor>Dark</keywordMajor> Attacks against champions: <li><keywordMajor>Light</keywordMajor> Attacks grant <scaleArmor>Armor</scaleArmor> and <scaleMR>Magic Resist</scaleMR> for 5s. <li><keywordMajor>Dark</keywordMajor> Attacks grant 10% <scaleArmor>Armor Penetration</scaleArmor> and <scaleMR>Magic Penetration</scaleMR> for 5s. </mainText>",
     "plaintext": "Kill minions periodically to heal and grant gold to a nearby ally",
     "gold": 3000,
     "stats": {
@@ -2937,12 +2937,12 @@
   {
     "id": 6610,
     "name": "Sundered Sky",
-    "description": "<mainText><stats><attention>45</attention> Attack Damage<br><attention>400</attention> Health<br><attention>10</attention> Ability Haste</stats><br><br><passive>Lightshield Strike</passive><br>Your first Attack against a champion <attention>Critically Strikes</attention> and <healing>restores Health</healing>.</mainText>",
+    "description": "<mainText><stats><attention>40</attention> Attack Damage<br><attention>400</attention> Health<br><attention>10</attention> Ability Haste</stats><br><br><passive>Lightshield Strike</passive><br>Your first Attack against a champion <attention>Critically Strikes</attention> and <healing>restores Health</healing>.</mainText>",
     "plaintext": "",
     "gold": 3100,
     "stats": {
       "FlatHPPoolMod": 400,
-      "FlatPhysicalDamageMod": 45
+      "FlatPhysicalDamageMod": 40
     },
     "tags": [
       "Health",
