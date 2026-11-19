@@ -1,0 +1,21 @@
+# Destroy the enemy nexus. Dead units return after 8 seconds.
+name: 2v2 destroy the nexus
+pack: ../content/lol
+map: { width: 4000, height: 2000 }
+timeout_s: 480
+spawn_jitter: 200
+respawn_s: 8
+mode: { type: nexus }
+teams:
+  - name: blue
+    members:
+      - { unit: garen, level: 6, gold: 3000, spawn: [700, 900], loadout: policy }
+      - { unit: annie, level: 6, gold: 3000, spawn: [700, 1100], loadout: policy }
+    objectives:
+      - { unit: nexus, spawn: [300, 1000] }
+  - name: red
+    members:
+      - { unit: garen, level: 6, gold: 3000, spawn: [3300, 900], loadout: policy }
+      - { unit: ashe, level: 6, gold: 3000, spawn: [3300, 1100], loadout: policy }
+    objectives:
+      - { unit: nexus, spawn: [3700, 1000] }

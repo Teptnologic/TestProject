@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+
+[workspace.dependencies]
+arena-formula = { path = "crates/arena-formula" }
+arena-kernel = { path = "crates/arena-kernel" }
+arena-content = { path = "crates/arena-content" }
+arena-ruleset-lol = { path = "crates/arena-ruleset-lol" }
+arena-modes = { path = "crates/arena-modes" }
+arena-agents = { path = "crates/arena-agents" }
+arena-match = { path = "crates/arena-match" }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1"
+bincode = "1"
+libm = "0.2"
+rayon = "1"
+clap = { version = "4", features = ["derive"] }
+
+[profile.release]
+opt-level = 3

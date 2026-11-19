@@ -1,0 +1,16 @@
+[package]
+name = "arena-match"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arena-kernel.workspace = true
+arena-content.workspace = true
+arena-modes.workspace = true
+arena-agents.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true
+rayon.workspace = true
+
+[dev-dependencies]
+arena-ruleset-lol.workspace = true

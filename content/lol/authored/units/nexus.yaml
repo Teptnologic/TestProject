@@ -1,0 +1,8 @@
+# A stationary objective for the nexus game mode. It has no actions and never moves.
+id: nexus
+radius: 150
+tags: [structure]
+stats:
+  max_hp: 1500
+  armor: 20
+  mr: 20

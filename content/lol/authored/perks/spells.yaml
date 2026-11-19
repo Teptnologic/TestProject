@@ -1,0 +1,21 @@
+# Summoner spells. Numbers are written by hand (League of Legends Wiki).
+
+# Burns the target for true damage over 5 seconds and applies Grievous Wounds.
+- id: ignite
+  category: spell
+  actions:
+    - id: ignite_cast
+      slot: D
+      tags: [summoner]
+      target: enemy
+      range: 600
+      cooldown: 180
+      on_execute:
+        - apply_buff: { buff: ignite_burn }
+        - grievous: { duration: 5 }
+  buffs:
+    - id: ignite_burn
+      duration: 5
+      every: 1
+      on_tick:
+        - damage: { amount: "(50 + 20 * level) / 5", type: "true", tags: [dot] }

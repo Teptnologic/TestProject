@@ -1,0 +1,10 @@
+# Determinism: platform maths may differ between native and WASM. Use arena_kernel::math.
+disallowed-methods = [
+  { path = "f64::sin", reason = "use arena_kernel::math" },
+  { path = "f64::cos", reason = "use arena_kernel::math" },
+  { path = "f64::tan", reason = "use arena_kernel::math" },
+  { path = "f64::atan2", reason = "use arena_kernel::math" },
+  { path = "f64::powf", reason = "use arena_kernel::math" },
+  { path = "f64::exp", reason = "use arena_kernel::math" },
+  { path = "f64::ln", reason = "use arena_kernel::math" },
+]

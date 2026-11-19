@@ -1,0 +1,24 @@
+# First to 10 points. Kills are worth 1; holding the middle alone pays 0.5 per second.
+name: 3v3 points with a centre zone
+pack: ../content/lol
+map: { width: 4000, height: 3000 }
+timeout_s: 180
+spawn_jitter: 200
+respawn_s: 6
+mode:
+  type: points
+  target: 10
+  per_kill: 1
+  zones:
+    - { name: centre, at: [2000, 1500], radius: 350, points_per_s: 0.5 }
+teams:
+  - name: blue
+    members:
+      - { unit: garen, level: 6, gold: 3000, spawn: [600, 1500], loadout: policy }
+      - { unit: ashe, level: 6, gold: 3000, spawn: [400, 1200], loadout: policy }
+      - { unit: annie, level: 6, gold: 3000, spawn: [400, 1800], loadout: policy }
+  - name: red
+    members:
+      - { unit: garen, level: 6, gold: 3000, spawn: [3400, 1500], loadout: policy }
+      - { unit: ashe, level: 6, gold: 3000, spawn: [3600, 1200], loadout: policy }
+      - { unit: annie, level: 6, gold: 3000, spawn: [3600, 1800], loadout: policy }

@@ -1,0 +1,18 @@
+# Three teams, last one standing. Each unit has two lives.
+name: Three-way elimination
+pack: ../content/lol
+map: { width: 3000, height: 3000 }
+timeout_s: 180
+spawn_jitter: 200
+respawn_s: 4
+mode: { type: elimination, lives: 2 }
+teams:
+  - name: blue
+    members:
+      - { unit: garen, level: 6, gold: 3000, spawn: [700, 700], loadout: policy }
+  - name: red
+    members:
+      - { unit: ashe, level: 6, gold: 3000, spawn: [2300, 700], loadout: policy }
+  - name: green
+    members:
+      - { unit: annie, level: 6, gold: 3000, spawn: [1500, 2300], loadout: policy }

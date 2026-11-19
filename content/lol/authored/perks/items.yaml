@@ -1,0 +1,83 @@
+# Items. Costs, stats and the `@constants` come from generated/perks.yaml.
+# Only the behaviour is written here.
+
+- id: long_sword
+- id: dorans_blade
+- id: vampiric_scepter
+- id: giants_belt
+- id: chain_vest
+- id: needlessly_large_rod
+
+- id: berserkers_greaves
+  group: boots
+
+- id: infinity_edge
+  stats:
+    crit_damage: 0.3
+
+- id: rabadons_deathcap
+  modifiers:
+    - { stat: ap, layer: pct_add, value: "@apamp" }
+
+# Spellblade: after using an ability, the next attack deals bonus damage.
+- id: sheen
+  group: spellblade
+  passives: [sheen_spellblade]
+  buffs:
+    - id: sheen_spellblade
+      listeners:
+        - on: ability_cast
+          cooldown: 1.5
+          effects:
+            - apply_buff: { buff: sheen_charged, to: source }
+    - id: sheen_charged
+      duration: 10
+      listeners:
+        - on: on_hit
+          consume: true
+          effects:
+            - damage: { amount: base_ad, type: physical, tags: [proc] }
+
+# Attacks deal a share of the target's current health; less for ranged users.
+- id: blade_of_the_ruined_king
+  passives: [botrk_mist_edge]
+  buffs:
+    - id: botrk_mist_edge
+      listeners:
+        - on: on_hit
+          effects:
+            - damage:
+                amount: "target.hp * if(attack_range > 300, @ranged_value, @melee_value)"
+                type: physical
+                tags: [proc]
+
+# Attacks shred armor, stacking. (In the game any physical damage applies a stack.)
+- id: black_cleaver
+  passives: [black_cleaver_carve]
+  buffs:
+    - id: black_cleaver_carve
+      listeners:
+        - on: on_hit
+          effects:
+            - apply_buff: { buff: black_cleaver_shred }
+    - id: black_cleaver_shred
+      duration: "@debuff_duration"
+      max_stacks: 5
+      policy: add_stack
+      modifiers:
+        - { stat: armor, layer: pct_add, value: "-@shred_per_stack * stacks" }
+
+# Attackers take magic damage and suffer Grievous Wounds.
+- id: thornmail
+  passives: [thornmail_thorns]
+  buffs:
+    - id: thornmail_thorns
+      listeners:
+        - on: on_hit
+          role: target
+          effects:
+            - damage:
+                amount: "@base_damage + @bonus_armor_damage_ratio * bonus_armor"
+                type: magic
+                tags: [proc]
+            - grievous: { duration: "@grievous_duration" }

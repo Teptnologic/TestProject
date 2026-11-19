@@ -9,6 +9,41 @@ tasks, the files it creates, and a "done when" check that can be run.
 
 ---
 
+## 0. Status
+
+The MVP is built: milestones M0–M7 exist in a first, working form, and
+[ARCHITECTURE.md](ARCHITECTURE.md) describes the layers and their contracts.
+M8 (Python), M9 (WASM and viewer) and M10 (Luau) are not started.
+
+What the MVP does differently from the milestone text below:
+
+| Planned | Built | Why |
+|---|---|---|
+| `hecs` for world storage | Entities are plain records in an id-ordered map | Snapshots are a clone, iteration order is fixed, and nothing needs a component registry. Revisit if entity kinds multiply. |
+| `rand_chacha` | A small built-in generator (SplitMix64) | Serialisable, identical everywhere, no dependency |
+| Pure event queue | Timers on a queue; movement and projectiles advance once per tick | Equivalent while times snap to ticks, and far simpler. Projectiles still sweep their step. |
+| `arena-match` not in the layout | Added: scenario, staging, match loop, replay, batch | The CLI should stay a thin shell |
+| Respawn inside each mode | A separate `Respawner` that modes can veto | Lets modes be combined without double respawns |
+
+Known gaps inside M0–M7, in rough priority order:
+
+- **Map**: an open rectangle only. No obstacles, pathfinding, brush or vision.
+- **Ingest**: writes stats, growth, costs, cooldowns, ranges and item constants.
+  Per-rank ability damage numbers are still typed by hand in `authored/`.
+- **Content**: Garen, Ashe and Annie (each with stated simplifications), a
+  nexus, 13 items and Ignite. No runes yet.
+- **Ruleset**: no lifesaving effects, stasis, assists, conditional modifiers
+  evaluated on read, wind-up modifier, or multiplicative tenacity.
+- **Scripted AI**: nearest-target, rule list, optional kiting. No skillshot
+  leading or dodging, no focus fire, no retreating.
+- **Kernel**: no spatial index (fine at this scale), no attachment effect in
+  data, team relations are simply "different team = hostile".
+- **Snapshots**: the world serialises; mode and policy state only clone.
+- **Golden numbers**: formulas are tested against the wiki's stated formulas,
+  not yet against timings measured in the Practice Tool.
+
+---
+
 ## 1. Decisions already made
 
 | Topic | Decision |
@@ -23,7 +58,7 @@ tasks, the files it creates, and a "done when" check that can be run.
 | Builds | Per team: `fixed` (given in the scenario) or `policy` (an agent buys) |
 | Win conditions | Elimination, first to X points, destroy the nexus; combinable; richer modes (e.g. football) later |
 | Core language | Rust |
-| World storage | `hecs` (entity-component system) |
+| World storage | Plain entity records in an id-ordered map (see Status) |
 | Determinism | `f64` with all non-trivial maths through `libm`; integer time; seeded RNG |
 | Scripting | Luau via `mlua`, for escape hatches and scripted game modes |
 | Training | Python bindings (PyO3 + maturin), vectorised multi-agent environment |
@@ -59,7 +94,8 @@ crates/
   arena-modes/             GameMode trait, elimination / points / nexus, respawn
   arena-agents/            Policy trait, observation + action spec, scripted policy
   arena-script/            Luau host (milestone 10)
-  arena-cli/               `arena` binary: run, batch, validate, replay
+  arena-match/             scenario, staging, match loop, replay, batch
+  arena-cli/               `arena` binary: validate, run, batch
   arena-py/                Python bindings (milestone 8)
   arena-wasm/              browser bindings (milestone 9)
 content/lol/
@@ -82,9 +118,9 @@ docs/                      this plan, schema reference, building-block catalogue
    - Never call `f64::sin`, `cos`, `atan2`, `powf`, `exp`, `ln`; use the
      `arena_kernel::math` wrappers over `libm`. A clippy `disallowed_methods`
      list enforces this.
-   - Never iterate a `HashMap` or a raw `hecs` query where order affects
+   - Never iterate a `HashMap` where order affects
      results. Sort by `EntityId`, or use `BTreeMap` / `IndexMap`.
-   - One RNG (`rand_chacha::ChaCha8Rng`) owned by the world, serialised in
+   - One seeded RNG owned by the world, serialised in
      snapshots. No `thread_rng`.
 2. **Everything is snapshot-able.** Every component and every piece of mode,
    ruleset and policy state implements `Serialize + Deserialize + Clone`.

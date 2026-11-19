@@ -1,0 +1,22 @@
+# Matchup analysis: who wins at level 6 with these builds?
+name: 1v1 Garen vs Ashe, level 6
+pack: ../content/lol
+map: { width: 3000, height: 3000 }
+timeout_s: 90
+spawn_jitter: 200
+mode: { type: elimination }
+teams:
+  - name: blue
+    members:
+      - unit: garen
+        level: 6
+        gold: 3000
+        spawn: [1000, 1500]
+        loadout: { fixed: [berserkers_greaves, dorans_blade, long_sword, long_sword] }
+  - name: red
+    members:
+      - unit: ashe
+        level: 6
+        gold: 3000
+        spawn: [2000, 1500]
+        loadout: { fixed: [berserkers_greaves, dorans_blade, vampiric_scepter] }

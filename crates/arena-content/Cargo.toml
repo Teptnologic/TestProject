@@ -1,0 +1,13 @@
+[package]
+name = "arena-content"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arena-formula.workspace = true
+arena-kernel.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true
+
+[dev-dependencies]
+arena-ruleset-lol.workspace = true

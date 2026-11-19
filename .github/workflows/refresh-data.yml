@@ -18,6 +18,8 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run fetch-data
+      # Regenerate the simulator's numbers layer from the refreshed data.
+      - run: node tools/ingest/ingest.mjs
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
         with:

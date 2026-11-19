@@ -1,0 +1,14 @@
+# A mirror match: both sides are identical, so the win rate should be close to 50%.
+name: 1v1 Annie mirror, level 6
+pack: ../content/lol
+map: { width: 3000, height: 3000 }
+timeout_s: 90
+spawn_jitter: 200
+mode: { type: elimination }
+teams:
+  - name: blue
+    members:
+      - { unit: annie, level: 6, gold: 2500, spawn: [1000, 1500], loadout: policy }
+  - name: red
+    members:
+      - { unit: annie, level: 6, gold: 2500, spawn: [2000, 1500], loadout: policy }

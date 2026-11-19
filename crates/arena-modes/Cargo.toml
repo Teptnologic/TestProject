@@ -1,0 +1,8 @@
+[package]
+name = "arena-modes"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arena-kernel.workspace = true
+serde.workspace = true

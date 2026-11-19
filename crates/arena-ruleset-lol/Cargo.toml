@@ -1,0 +1,7 @@
+[package]
+name = "arena-ruleset-lol"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arena-kernel.workspace = true

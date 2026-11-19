@@ -1,0 +1,137 @@
+# Annie. Base stats, growth and cooldowns come from generated/units.yaml.
+# The per-rank ability numbers below are written by hand (League of Legends
+# Wiki) until the ingest tool extracts them from Riot's data.
+# Simplified: W is a circle around the target instead of a cone, E has no
+# damage reflection or speed boost, and R deals its burst without summoning Tibbers.
+id: annie
+radius: 55
+tags: [ranged]
+params:
+  windup_pct: 0.1958
+constants:
+  attack_missile_speed: 1200
+  q_damage: [80, 115, 150, 185, 220]
+  q_cost: [60, 65, 70, 75, 80]
+  w_damage: [70, 115, 160, 205, 250]
+  w_cost: [90, 95, 100, 105, 110]
+  e_shield: [60, 100, 140, 180, 220]
+  r_damage: [150, 275, 400]
+rank_priority: [Q, W, E]
+passives: [annie_pyromania]
+
+actions:
+  - id: annie_attack
+    slot: A
+    tags: [basic_attack]
+    target: enemy
+    range: attack_range
+    lock_move: true
+    cancel_on_move: true
+    on_execute:
+      - projectile:
+          speed: "@attack_missile_speed"
+          homing: true
+          on_hit:
+            - damage: { amount: ad, type: magic, tags: [basic_attack], crit: 1 }
+
+  - id: annie_q
+    slot: Q
+    tags: [ability]
+    max_rank: 5
+    target: enemy
+    range: "@q_range"
+    cast_time: 0.25
+    cooldown: "@q_cooldown[rank]"
+    costs: { mana: "@q_cost[rank]" }
+    lock_move: true
+    on_cast: &arm_stun
+      # Four stacks are spent when the spell is cast, not when it lands.
+      - if:
+          cond: "buff.annie_stacks >= 4"
+          then:
+            - remove_buff: { buff: annie_stacks, from: source }
+            - apply_buff: { buff: annie_stun_armed, to: source }
+    on_execute:
+      - projectile:
+          speed: 1400
+          homing: true
+          on_hit:
+            - damage: { amount: "@q_damage[rank] + 0.8 * ap", type: magic }
+            - if: &stun_if_armed
+                cond: "buff.annie_stun_armed >= 1"
+                then:
+                  - stun: { duration: "if(level >= 11, 1.75, if(level >= 6, 1.5, 1.25))" }
+      - remove_buff: &disarm { buff: annie_stun_armed, from: source }
+
+  - id: annie_w
+    slot: W
+    tags: [ability]
+    max_rank: 5
+    target: enemy
+    range: "@w_range"
+    cast_time: 0.25
+    cooldown: "@w_cooldown[rank]"
+    costs: { mana: "@w_cost[rank]" }
+    lock_move: true
+    on_cast: *arm_stun
+    on_execute:
+      - area:
+          center: target
+          radius: 250
+          effects:
+            - damage: { amount: "@w_damage[rank] + 0.85 * ap", type: magic, tags: [aoe] }
+            - if: *stun_if_armed
+      - remove_buff: *disarm
+
+  - id: annie_e
+    slot: E
+    tags: [ability]
+    max_rank: 5
+    cooldown: "@e_cooldown[rank]"
+    costs: { mana: 40 }
+    on_cast:
+      - shield: { to: source, amount: "@e_shield[rank] + 0.55 * ap", duration: 3 }
+
+  - id: annie_r
+    slot: R
+    tags: [ability, ultimate]
+    max_rank: 3
+    target: enemy
+    range: "@r_range"
+    cast_time: 0.25
+    cooldown: "@r_cooldown[rank]"
+    costs: { mana: 100 }
+    lock_move: true
+    on_cast: *arm_stun
+    on_execute:
+      - area:
+          center: target
+          radius: 250
+          effects:
+            - damage: { amount: "@r_damage[rank] + 0.75 * ap", type: magic, tags: [aoe] }
+            - if: *stun_if_armed
+      - remove_buff: *disarm
+
+buffs:
+  - id: annie_pyromania
+    listeners:
+      - on: ability_cast
+        effects:
+          - apply_buff: { buff: annie_stacks, to: source }
+
+  - id: annie_stacks
+    max_stacks: 4
+    policy: add_stack
+
+  - id: annie_stun_armed
+    duration: 3
+
+ai:
+  attack: A
+  kite: true
+  build: [needlessly_large_rod, needlessly_large_rod, giants_belt, long_sword]
+  rules:
+    - { use: R }
+    - { use: Q }
+    - { use: W }
+    - { use: E, when: "distance < 700" }

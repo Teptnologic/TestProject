@@ -1,0 +1,8 @@
+[package]
+name = "arena-agents"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arena-kernel.workspace = true
+arena-content.workspace = true

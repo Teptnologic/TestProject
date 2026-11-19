@@ -1,0 +1,10 @@
+[package]
+name = "arena-kernel"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arena-formula.workspace = true
+serde.workspace = true
+bincode.workspace = true
+libm.workspace = true
