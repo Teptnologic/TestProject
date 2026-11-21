@@ -40,6 +40,8 @@ pub enum DashTo {
     Point,
     /// Directly away from the context's source (a knockback).
     AwayFromSource,
+    /// Towards the context's source, stopping at its edge (a pull or hook).
+    Source,
 }
 
 /// The building blocks data files compose. Rulesets add their own through `Custom`.

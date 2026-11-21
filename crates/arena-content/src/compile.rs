@@ -397,6 +397,7 @@ impl Compiler<'_> {
                     "target" => DashTo::Target,
                     "point" => DashTo::Point,
                     "away" => DashTo::AwayFromSource,
+                    "source" => DashTo::Source,
                     other => return self.fail(at, format!("unknown destination `{other}`")),
                 },
                 distance: ex(self, &mut f, "distance")?,

@@ -1,0 +1,129 @@
+# Nautilus (support / tank). Base stats, growth, cooldowns and ranges come from generated/units.yaml.
+# Numbers marked "Riot data" come from src/data/generated/champion-details.json.
+# Numbers marked "unverified" were filled in from memory of the kit and have not
+# been checked against the game or the wiki.
+# Simplified: Q pulls only the target to Nautilus instead of dragging both
+# together, and cannot hook terrain; the passive root has one shared cooldown
+# instead of one per target; W's damage over time lands at once; E's three
+# waves hit once.
+id: nautilus
+radius: 65
+tags: [melee]
+params:
+  windup_pct: 0.22 # unverified
+constants:
+  q_damage: [70, 115, 160, 205, 250] # Riot data
+  q_stun: 0.5 # Riot data
+  w_shield: [45, 55, 65, 75, 85] # unverified
+  w_shield_hp: [0.09, 0.1, 0.11, 0.12, 0.13] # unverified
+  w_damage: [30, 40, 50, 60, 70] # unverified
+  e_damage: [55, 85, 115, 145, 175] # unverified
+  e_slow: [0.3, 0.35, 0.4, 0.45, 0.5] # unverified
+  e_cost: [50, 60, 70, 80, 90] # Riot data
+  r_damage: [150, 275, 400] # unverified
+  r_stun: [1, 1.5, 2] # unverified
+rank_priority: [Q, W, E]
+passives: [nautilus_staggering_blow]
+
+actions:
+  - id: nautilus_attack
+    slot: A
+    tags: [basic_attack]
+    target: enemy
+    range: attack_range
+    lock_move: true
+    cancel_on_move: true
+    on_execute:
+      - damage: { amount: ad, type: physical, tags: [basic_attack], crit: 1 }
+
+  - id: nautilus_q
+    slot: Q
+    tags: [ability]
+    max_rank: 5
+    target: point
+    cast_time: 0.25
+    cooldown: "@q_cooldown[rank]"
+    costs: { mana: 60 }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 2000 # unverified
+          radius: 90 # unverified
+          range: "@q_range"
+          on_hit:
+            - damage: { amount: "@q_damage[rank] + 0.9 * ap", type: magic }
+            - dash: { who: target, to: source, speed: 1800 }
+            - stun: { duration: "@q_stun" }
+
+  - id: nautilus_w
+    slot: W
+    tags: [ability]
+    max_rank: 5
+    cooldown: "@w_cooldown[rank]"
+    costs: { mana: 60 }
+    on_cast:
+      - shield: { to: source, amount: "@w_shield[rank] + @w_shield_hp[rank] * max_hp", duration: 6 }
+      - apply_buff: { buff: nautilus_titans_wrath, to: source }
+
+  - id: nautilus_e
+    slot: E
+    tags: [ability]
+    max_rank: 5
+    cooldown: "@e_cooldown[rank]"
+    costs: { mana: "@e_cost[rank]" }
+    on_cast:
+      - area:
+          center: source
+          radius: 400 # unverified
+          effects:
+            - damage: { amount: "@e_damage[rank] + 0.5 * ap", type: magic, tags: [aoe] } # ratio unverified
+            - slow: { amount: "@e_slow[rank]", duration: 1.5 } # does not decay here
+
+  - id: nautilus_r
+    slot: R
+    tags: [ability, ultimate]
+    max_rank: 3
+    target: enemy
+    range: "@r_range"
+    cast_time: 0.25
+    cooldown: "@r_cooldown[rank]"
+    costs: { mana: 100 }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 1000 # unverified
+          homing: true
+          on_hit:
+            - damage: { amount: "@r_damage[rank] + 0.8 * ap", type: magic } # ratio unverified
+            # Knock-up and stun, modelled as one stun.
+            - stun: { duration: "@r_stun[rank]" }
+
+buffs:
+  # First attack against a target deals bonus damage and roots.
+  - id: nautilus_staggering_blow
+    listeners:
+      - on: on_hit
+        cooldown: 9 # per target in the game; one shared cooldown here
+        effects:
+          - damage: { amount: "2 + 6 * level", type: physical, tags: [proc] } # unverified
+          - root: { duration: "0.75 + 0.75 * (level - 1) / 17" } # 0.75 to 1.5 s, unverified
+
+  - id: nautilus_titans_wrath
+    duration: 6
+    listeners:
+      - on: on_hit
+        effects:
+          - area:
+              center: target
+              radius: 350 # unverified
+              effects:
+                - damage: { amount: "@w_damage[rank] + 0.4 * ap", type: magic, tags: [aoe] }
+
+ai:
+  attack: A
+  build: [plated_steelcaps, kindlegem, chain_vest]
+  rules:
+    - { use: R, when: "distance < 825" }
+    - { use: Q, when: "distance < 1000" }
+    - { use: E, when: "distance < 350" }
+    - { use: W, when: "distance < 400" }

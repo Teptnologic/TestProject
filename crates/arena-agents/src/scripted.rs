@@ -31,6 +31,32 @@ impl Scripted {
             .map(|u| u.id)
     }
 
+    /// The ally an ally-targeted action goes to: the most injured unit on the
+    /// team (itself included) within the action's range, preferring a
+    /// teammate over itself when they are equally hurt. Structures are skipped.
+    fn ally(w: &World, me: EntityId, slot: usize) -> EntityId {
+        let Some(e) = w.ent(me) else { return me };
+        let mut ctx = Ctx::new(me);
+        ctx.rank = e.slots[slot].rank;
+        let range = w
+            .defs
+            .action(e.slots[slot].action)
+            .range
+            .as_ref()
+            .map(|r| w.eval(r, &ctx));
+        w.units()
+            .filter(|u| u.alive && !u.slots.is_empty() && !w.hostile(me, u.id))
+            .filter(|u| u.id == me || range.is_none_or(|r| w.edge_distance(me, u.id) <= r))
+            .min_by(|a, b| {
+                let va = w.ruleset.vitality(w, a.id);
+                let vb = w.ruleset.vitality(w, b.id);
+                va.total_cmp(&vb)
+                    .then((a.id == me).cmp(&(b.id == me)))
+                    .then(a.id.cmp(&b.id))
+            })
+            .map_or(me, |u| u.id)
+    }
+
     /// Aims a slot's action the obvious way for its targeting kind.
     fn aim(w: &World, me: EntityId, slot: usize, enemy: EntityId) -> Command {
         let action = w
@@ -40,7 +66,7 @@ impl Scripted {
         let target = match w.defs.action(action).target {
             TargetKind::None => Target::None,
             TargetKind::Point => w.ent(enemy).map_or(Target::None, |e| Target::Point(e.pos)),
-            TargetKind::Unit(arena_kernel::Filter::Ally) => Target::Entity(me),
+            TargetKind::Unit(arena_kernel::Filter::Ally) => Target::Entity(Self::ally(w, me, slot)),
             TargetKind::Unit(_) => Target::Entity(enemy),
         };
         Command::Use { slot, target }

@@ -1,0 +1,156 @@
+# Ornn (tank). Base stats, growth, cooldowns and ranges come from generated/units.yaml.
+# Numbers marked "Riot data" come from src/data/generated/champion-details.json.
+# Numbers marked "unverified" were filled in from memory of the kit and have not
+# been checked against the game or the wiki.
+# Simplified: no item forging. Q's pillar is not terrain; instead an enemy hit
+# by Q is marked, and E knocks up a marked enemy as if it had hit the pillar.
+# Brittle only adds bonus damage to Ornn's next attack (no longer CC). R fires
+# from Ornn towards the target in one pass, and its headbutt recast is folded
+# into the hit.
+id: ornn
+radius: 70
+tags: [melee]
+params:
+  windup_pct: 0.22 # unverified
+constants:
+  q_damage: [20, 45, 70, 95, 120] # Riot data
+  q_slow: 0.4 # Riot data
+  w_damage_hp: [0.12, 0.13, 0.14, 0.15, 0.16] # unverified
+  w_cost: [45, 50, 55, 60, 65] # Riot data
+  e_damage: [80, 125, 170, 215, 260] # unverified
+  e_knockup: 1.25 # unverified
+  e_cost: [35, 40, 45, 50, 55] # Riot data
+  r_damage: [125, 175, 225] # unverified
+  r_slow: 0.4 # unverified
+  brittle_hp: 0.1 # unverified
+rank_priority: [Q, W, E]
+passives: [ornn_living_forge, ornn_brittle_breaker]
+
+actions:
+  - id: ornn_attack
+    slot: A
+    tags: [basic_attack]
+    target: enemy
+    range: attack_range
+    lock_move: true
+    cancel_on_move: true
+    on_execute:
+      - damage: { amount: ad, type: physical, tags: [basic_attack], crit: 1 }
+
+  - id: ornn_q
+    slot: Q
+    tags: [ability]
+    max_rank: 5
+    target: point
+    cast_time: 0.3
+    cooldown: "@q_cooldown[rank]"
+    costs: { mana: 45 }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 1800 # unverified
+          radius: 65 # unverified
+          range: "@q_range"
+          pierce: 4
+          on_hit:
+            - damage: { amount: "@q_damage[rank] + 1.1 * ad", type: physical }
+            - slow: { amount: "@q_slow", duration: 2 }
+            - apply_buff: { buff: ornn_pillar_mark, to: target }
+
+  - id: ornn_w
+    slot: W
+    tags: [ability]
+    max_rank: 5
+    target: enemy
+    range: 500 # unverified
+    cast_time: 0.75
+    cooldown: "@w_cooldown[rank]"
+    costs: { mana: "@w_cost[rank]" }
+    lock_move: true
+    on_execute:
+      - area:
+          center: target
+          radius: 300 # unverified
+          effects:
+            - damage: { amount: "@w_damage_hp[rank] * target.max_hp", type: magic, tags: [aoe] }
+            - apply_buff: { buff: ornn_brittle, to: target }
+
+  - id: ornn_e
+    slot: E
+    tags: [ability]
+    max_rank: 5
+    target: enemy
+    range: "@e_range"
+    cooldown: "@e_cooldown[rank]"
+    costs: { mana: "@e_cost[rank]" }
+    lock_move: true
+    on_execute:
+      - dash: { to: target, speed: 1600 } # unverified
+      # The dash is still under way here, so the shockwave is centred on the target.
+      - area:
+          center: target
+          radius: 360 # unverified
+          effects:
+            - damage: { amount: "@e_damage[rank] + 0.4 * bonus_armor + 0.4 * bonus_mr", type: physical, tags: [aoe] }
+            - if:
+                cond: "target.buff.ornn_pillar_mark >= 1"
+                then:
+                  # Knock-up modelled as a stun.
+                  - stun: { duration: "@e_knockup" }
+                  - remove_buff: { buff: ornn_pillar_mark, from: target }
+
+  - id: ornn_r
+    slot: R
+    tags: [ability, ultimate]
+    max_rank: 3
+    target: point
+    cast_time: 0.5
+    cooldown: "@r_cooldown[rank]"
+    costs: { mana: 100 }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 1200 # unverified
+          radius: 170 # unverified
+          range: 1500 # the game's elemental travels further; capped for the open map
+          pierce: 4
+          on_hit:
+            - damage: { amount: "@r_damage[rank] + 0.2 * ap", type: magic }
+            - slow: { amount: "@r_slow", duration: 2 }
+            # The headbutt's knock-up, modelled as a stun.
+            - stun: { duration: 1 } # unverified
+            - apply_buff: { buff: ornn_brittle, to: target }
+
+buffs:
+  # Living Forge: 10% more armor, magic resist and health (unverified).
+  - id: ornn_living_forge
+    modifiers:
+      - { stat: armor, layer: pct_add, value: 0.1 }
+      - { stat: mr, layer: pct_add, value: 0.1 }
+      - { stat: max_hp, layer: pct_add, value: 0.1 }
+
+  # Ornn's next attack against a Brittle enemy deals bonus max-health damage.
+  - id: ornn_brittle_breaker
+    listeners:
+      - on: on_hit
+        when: "target.buff.ornn_brittle >= 1"
+        effects:
+          - damage: { amount: "@brittle_hp * target.max_hp", type: magic, tags: [proc] }
+          - remove_buff: { buff: ornn_brittle, from: target }
+
+  - id: ornn_brittle
+    duration: 6 # unverified
+
+  # Stands in for Q's pillar: a marked enemy is knocked up by E.
+  - id: ornn_pillar_mark
+    duration: 4 # Riot data (pillar duration)
+
+ai:
+  attack: A
+  build: [plated_steelcaps, chain_vest, giants_belt]
+  rules:
+    - { use: R, when: "distance < 900" }
+    - { use: Q, when: "distance < 750" }
+    - { use: E, when: "distance < 450 and target.buff.ornn_pillar_mark >= 1" }
+    - { use: W, when: "distance < 450" }
+    - { use: E, when: "distance < 450" }

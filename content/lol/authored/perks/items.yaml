@@ -7,8 +7,30 @@
 - id: giants_belt
 - id: chain_vest
 - id: needlessly_large_rod
+# Plain-stat items added for the support, tank and assassin builds. Any
+# passive or active these items have in the game is not modelled.
+- id: ruby_crystal
+- id: cloth_armor
+- id: null_magic_mantle
+- id: amplifying_tome
+- id: blasting_wand
+- id: fiendish_codex
+- id: kindlegem
+- id: caulfields_warhammer
+# Lethality 10, from generated/perks.yaml (`lethality_amount`).
+- id: serrated_dirk
+  stats:
+    lethality: 10
 
 - id: berserkers_greaves
+  group: boots
+- id: plated_steelcaps
+  group: boots
+- id: mercurys_treads
+  group: boots
+- id: sorcerers_shoes
+  group: boots
+- id: ionian_boots_of_lucidity
   group: boots
 
 - id: infinity_edge

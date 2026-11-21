@@ -1,0 +1,133 @@
+# Nami (support). Base stats, growth, cooldowns and ranges come from generated/units.yaml.
+# Numbers marked "Riot data" come from src/data/generated/champion-details.json.
+# Numbers marked "unverified" were filled in from memory of the kit and have not
+# been checked against the game or the wiki.
+# Simplified: no Surging Tides passive; Q lands instantly instead of after a delay;
+# W heals one ally and damages every enemy near that ally instead of bouncing;
+# E lasts its full duration with a proc cooldown instead of a three-hit count,
+# and only empowers attacks, not abilities.
+id: nami
+radius: 65
+tags: [ranged]
+params:
+  windup_pct: 0.18 # unverified
+constants:
+  attack_missile_speed: 1500 # unverified
+  q_damage: [75, 130, 185, 240, 295] # Riot data
+  q_stun: 1.5 # Riot data
+  w_heal: [60, 85, 110, 135, 160] # unverified
+  w_damage: [70, 110, 150, 190, 230] # unverified
+  w_cost: [70, 75, 80, 85, 90] # Riot data
+  e_damage: [20, 30, 40, 50, 60] # Riot data
+  e_slow: [0.15, 0.2, 0.25, 0.3, 0.35] # Riot data
+  e_cost: [55, 60, 65, 70, 75] # Riot data
+  r_damage: [150, 250, 350] # Riot data
+  r_slow: 0.7 # Riot data
+rank_priority: [W, E, Q]
+
+actions:
+  - id: nami_attack
+    slot: A
+    tags: [basic_attack]
+    target: enemy
+    range: attack_range
+    lock_move: true
+    cancel_on_move: true
+    on_execute:
+      - projectile:
+          speed: "@attack_missile_speed"
+          homing: true
+          on_hit:
+            - damage: { amount: ad, type: physical, tags: [basic_attack], crit: 1 }
+
+  - id: nami_q
+    slot: Q
+    tags: [ability]
+    max_rank: 5
+    target: point
+    range: "@q_range"
+    cast_time: 0.25
+    cooldown: "@q_cooldown[rank]"
+    costs: { mana: 60 }
+    lock_move: true
+    on_execute:
+      - area:
+          center: point
+          radius: 200 # unverified
+          effects:
+            - damage: { amount: "@q_damage[rank] + 0.5 * ap", type: magic, tags: [aoe] }
+            - stun: { duration: "@q_stun" }
+
+  - id: nami_w
+    slot: W
+    tags: [ability]
+    max_rank: 5
+    target: ally
+    range: "@w_range"
+    cast_time: 0.25
+    cooldown: "@w_cooldown[rank]"
+    costs: { mana: "@w_cost[rank]" }
+    lock_move: true
+    on_execute:
+      - heal: { to: target, amount: "@w_heal[rank] + 0.3 * ap" } # ratio unverified
+      - area:
+          center: target
+          radius: 700 # unverified
+          effects:
+            - damage: { amount: "@w_damage[rank] + 0.5 * ap", type: magic } # ratio unverified
+
+  - id: nami_e
+    slot: E
+    tags: [ability]
+    max_rank: 5
+    target: ally
+    range: "@e_range"
+    cooldown: "@e_cooldown[rank]"
+    costs: { mana: "@e_cost[rank]" }
+    on_cast:
+      - apply_buff: { buff: nami_e_blessing, to: target }
+
+  - id: nami_r
+    slot: R
+    tags: [ability, ultimate]
+    max_rank: 3
+    target: point
+    cast_time: 0.5
+    cooldown: "@r_cooldown[rank]"
+    costs: { mana: 100 }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 850 # unverified
+          radius: 280 # unverified
+          range: "@r_range"
+          pierce: 4
+          on_hit:
+            - damage: { amount: "@r_damage[rank] + 0.6 * ap", type: magic }
+            # Knock-up modelled as a stun.
+            - stun: { duration: 0.5 }
+            # Slow lasts longer the farther the wave travelled, 2 to 4 s.
+            - slow: { amount: "@r_slow", duration: "clamp(2 + distance / 1300, 2, 4)" } # unverified scaling
+
+buffs:
+  # The empowered ally's attacks deal bonus magic damage and slow. Nami's AP
+  # is captured when the buff is applied through `rank`; the damage ratio uses
+  # the ally's AP instead of Nami's (simplification).
+  - id: nami_e_blessing
+    duration: 6
+    listeners:
+      - on: on_hit
+        cooldown: 1.5
+        effects:
+          - damage: { amount: "@e_damage[rank] + 0.2 * ap", type: magic, tags: [proc] }
+          - slow: { amount: "@e_slow[rank]", duration: 1 }
+
+ai:
+  attack: A
+  kite: true
+  build: [ionian_boots_of_lucidity, fiendish_codex, blasting_wand, amplifying_tome]
+  rules:
+    - { use: R, when: "distance < 1000" }
+    - { use: Q, when: "distance < 850" }
+    - { use: W, when: "distance < 900" }
+    - { use: E, when: "distance < 900" }

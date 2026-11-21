@@ -1,0 +1,117 @@
+# Thresh (support). Base stats, growth, cooldowns and ranges come from generated/units.yaml.
+# Numbers marked "Riot data" come from src/data/generated/champion-details.json.
+# Numbers marked "unverified" were filled in from memory of the kit and have not
+# been checked against the game or the wiki.
+# Simplified: no souls passive; Q pulls the target a fixed distance instead of
+# over its whole duration, and has no recast; W shields an ally directly (no
+# lantern to click); E always pulls; E's passive attack damage is left out;
+# R is a circle instead of five walls.
+id: thresh
+radius: 55
+tags: [ranged]
+params:
+  windup_pct: 0.27 # unverified
+constants:
+  attack_missile_speed: 1000 # unverified
+  q_damage: [100, 150, 200, 250, 300] # unverified (Riot data lists 100 at every rank)
+  q_stun: 1.5 # Riot data
+  w_shield: [50, 75, 100, 125, 150] # unverified
+  w_cost: [50, 55, 60, 65, 70] # Riot data
+  e_damage: [75, 120, 165, 210, 255] # Riot data
+  e_slow: [0.2, 0.25, 0.3, 0.35, 0.4] # Riot data
+  e_cost: [60, 65, 70, 75, 80] # Riot data
+  r_damage: [250, 400, 550] # Riot data
+  r_slow: 0.99 # Riot data
+rank_priority: [Q, E, W]
+
+actions:
+  - id: thresh_attack
+    slot: A
+    tags: [basic_attack]
+    target: enemy
+    range: attack_range
+    lock_move: true
+    cancel_on_move: true
+    on_execute:
+      - projectile:
+          speed: "@attack_missile_speed"
+          homing: true
+          on_hit:
+            - damage: { amount: ad, type: physical, tags: [basic_attack], crit: 1 }
+
+  - id: thresh_q
+    slot: Q
+    tags: [ability]
+    max_rank: 5
+    target: point
+    cast_time: 0.5
+    cooldown: "@q_cooldown[rank]"
+    costs: { mana: 70 }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 1900 # unverified
+          radius: 70 # unverified
+          range: "@q_range"
+          on_hit:
+            - damage: { amount: "@q_damage[rank] + 0.9 * ap", type: magic } # ratio unverified
+            - dash: { who: target, to: source, distance: 400, speed: 1000 } # pull distance unverified
+            - stun: { duration: "@q_stun" }
+
+  - id: thresh_w
+    slot: W
+    tags: [ability]
+    max_rank: 5
+    target: ally
+    range: "@w_range"
+    cooldown: "@w_cooldown[rank]"
+    costs: { mana: "@w_cost[rank]" }
+    on_cast:
+      - shield: { to: target, amount: "@w_shield[rank] + 0.4 * ap", duration: 4 } # ratio unverified
+      - if:
+          cond: "distance > 0"
+          then:
+            - shield: { to: source, amount: "@w_shield[rank] + 0.4 * ap", duration: 4 }
+
+  - id: thresh_e
+    slot: E
+    tags: [ability]
+    max_rank: 5
+    cooldown: "@e_cooldown[rank]"
+    costs: { mana: "@e_cost[rank]" }
+    cast_time: 0.25
+    lock_move: true
+    on_execute:
+      - area:
+          center: source
+          radius: "@e_range"
+          effects:
+            - damage: { amount: "@e_damage[rank] + 0.7 * ap", type: magic, tags: [aoe] }
+            - dash: { who: target, to: source, distance: 200, speed: 1000 } # unverified
+            - slow: { amount: "@e_slow[rank]", duration: 1 }
+
+  - id: thresh_r
+    slot: R
+    tags: [ability, ultimate]
+    max_rank: 3
+    cooldown: "@r_cooldown[rank]"
+    costs: { mana: 100 }
+    cast_time: 0.75 # unverified
+    lock_move: true
+    on_execute:
+      - area:
+          center: source
+          radius: "@r_range"
+          effects:
+            - damage: { amount: "@r_damage[rank] + 1.0 * ap", type: magic, tags: [aoe] }
+            - slow: { amount: "@r_slow", duration: 2 }
+
+ai:
+  attack: A
+  kite: true
+  build: [mercurys_treads, kindlegem, chain_vest]
+  rules:
+    - { use: Q, when: "distance < 1000" }
+    - { use: R, when: "distance < 400" }
+    - { use: E, when: "distance < 450" }
+    - { use: W, when: "distance < 900" }

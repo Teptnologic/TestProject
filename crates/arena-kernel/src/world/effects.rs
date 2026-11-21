@@ -141,6 +141,13 @@ impl World {
                         let Some(p) = ctx.point else { return };
                         pos.step_towards(p, max.unwrap_or(f64::MAX)).0
                     }
+                    DashTo::Source => {
+                        let Some(src) = self.ent(ctx.source) else {
+                            return;
+                        };
+                        let gap = (pos.dist(src.pos) - my_radius - src.radius).max(0.0);
+                        pos.step_towards(src.pos, max.map_or(gap, |m| m.min(gap))).0
+                    }
                     DashTo::AwayFromSource => {
                         let Some(src) = self.ent(ctx.source) else {
                             return;

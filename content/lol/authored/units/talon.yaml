@@ -1,0 +1,116 @@
+# Talon (assassin). Base stats, growth, cooldowns and ranges come from generated/units.yaml.
+# Numbers marked "Riot data" come from src/data/generated/champion-details.json.
+# Numbers marked "unverified" were filled in from memory of the kit and have not
+# been checked against the game or the wiki.
+# Simplified: E (wall hop) is left out because the map has no walls; R's
+# invisibility is not modelled (there is no vision); W's outgoing and returning
+# blades hit together; R's two waves of blades hit together; the passive bleed
+# lands at once instead of over 2 seconds; Q's kill refund is left out.
+id: talon
+radius: 65
+tags: [melee]
+params:
+  windup_pct: 0.2 # unverified
+constants:
+  q_damage: [65, 85, 105, 125, 145] # unverified
+  w_out: [40, 50, 60, 70, 80] # unverified
+  w_back: [50, 80, 110, 140, 170] # unverified
+  w_cost: [50, 55, 60, 65, 70] # Riot data
+  w_slow: 0.4 # unverified
+  r_damage: [90, 135, 180] # unverified (per wave; two waves)
+  r_speed: [0.4, 0.55, 0.7] # unverified
+rank_priority: [W, Q]
+passives: [talon_blades_end]
+
+actions:
+  - id: talon_attack
+    slot: A
+    tags: [basic_attack]
+    target: enemy
+    range: attack_range
+    lock_move: true
+    cancel_on_move: true
+    on_execute:
+      - damage: { amount: ad, type: physical, tags: [basic_attack], crit: 1 }
+
+  - id: talon_q
+    slot: Q
+    tags: [ability]
+    max_rank: 5
+    target: enemy
+    range: "@q_range"
+    cooldown: "@q_cooldown[rank]"
+    costs: { mana: 40 }
+    lock_move: true
+    on_execute:
+      # In melee range Q critically strikes for 150% instead of leaping.
+      - if:
+          cond: "distance <= 225"
+          then:
+            - damage: { amount: "1.5 * (@q_damage[rank] + 1.1 * bonus_ad)", type: physical }
+          else:
+            - dash: { to: target, speed: 1800 } # unverified
+            - damage: { amount: "@q_damage[rank] + 1.1 * bonus_ad", type: physical }
+      - apply_buff: { buff: talon_wound, to: target }
+
+  - id: talon_w
+    slot: W
+    tags: [ability]
+    max_rank: 5
+    target: point
+    cast_time: 0.25
+    cooldown: "@w_cooldown[rank]"
+    costs: { mana: "@w_cost[rank]" }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 2300 # unverified
+          radius: 75 # unverified
+          range: 900 # unverified
+          pierce: 4
+          on_hit:
+            - damage: { amount: "@w_out[rank] + 0.4 * bonus_ad + @w_back[rank] + 0.8 * bonus_ad", type: physical } # ratios unverified
+            - slow: { amount: "@w_slow", duration: 1 }
+            - apply_buff: { buff: talon_wound, to: target, stacks: 2 }
+
+  - id: talon_r
+    slot: R
+    tags: [ability, ultimate]
+    max_rank: 3
+    cooldown: "@r_cooldown[rank]"
+    costs: { mana: 100 }
+    on_cast:
+      - apply_buff: { buff: talon_shadow_assault, to: source, duration: 2.5 }
+      - area:
+          center: source
+          radius: "@r_range"
+          effects:
+            - damage: { amount: "2 * (@r_damage[rank] + 1.0 * bonus_ad)", type: physical, tags: [aoe] }
+            - apply_buff: { buff: talon_wound, to: target, stacks: 2 }
+
+buffs:
+  # Abilities wound; an attack on a target with 3 wounds makes it bleed.
+  - id: talon_blades_end
+    listeners:
+      - on: on_hit
+        when: "target.buff.talon_wound >= 3"
+        effects:
+          - damage: { amount: "75 + 10 * (level - 1) + 2.0 * bonus_ad", type: physical, tags: [proc] } # unverified
+          - remove_buff: { buff: talon_wound, from: target }
+
+  - id: talon_wound
+    duration: 6 # unverified
+    max_stacks: 3
+    policy: add_stack
+
+  - id: talon_shadow_assault
+    modifiers:
+      - { stat: move_speed, layer: pct_add, value: "@r_speed[rank]" }
+
+ai:
+  attack: A
+  build: [serrated_dirk, caulfields_warhammer, long_sword, long_sword]
+  rules:
+    - { use: W, when: "distance < 800" }
+    - { use: Q, when: "distance < 575" }
+    - { use: R, when: "distance < 400" }

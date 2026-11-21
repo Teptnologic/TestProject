@@ -1,0 +1,135 @@
+# Sion (tank). Base stats, growth, cooldowns and ranges come from generated/units.yaml.
+# Numbers marked "Riot data" come from src/data/generated/champion-details.json.
+# Numbers marked "unverified" were filled in from memory of the kit and have not
+# been checked against the game or the wiki.
+# Simplified: no Glory in Death passive (Sion does not reanimate); Q always
+# charges for exactly 1 second; W detonates on its own after 3 seconds even
+# if the shield broke; W's max-health stacking is left out; R charges straight
+# at the target and deals its minimum damage.
+id: sion
+radius: 80
+tags: [melee]
+params:
+  windup_pct: 0.3 # unverified
+constants:
+  q_damage: [70, 105, 140, 175, 210] # unverified (1 s charge)
+  q_stun: 1.25 # unverified (1 s charge)
+  w_shield: [60, 75, 90, 105, 120] # Riot data
+  w_shield_hp: [0.08, 0.1, 0.12, 0.14, 0.16] # Riot data
+  w_damage: [40, 65, 90, 115, 140] # Riot data
+  w_damage_hp: 0.14 # Riot data
+  w_cost: [75, 80, 85, 90, 95] # Riot data
+  e_damage: [65, 100, 135, 170, 205] # Riot data
+  e_slow: [0.4, 0.45, 0.5, 0.55, 0.6] # Riot data
+  e_shred: 0.2 # unverified
+  e_cost: [35, 40, 45, 50, 55] # Riot data
+  r_damage: [150, 300, 450] # unverified (minimum damage)
+  r_stun: 1.5 # unverified
+rank_priority: [Q, W, E]
+
+actions:
+  - id: sion_attack
+    slot: A
+    tags: [basic_attack]
+    target: enemy
+    range: attack_range
+    lock_move: true
+    cancel_on_move: true
+    on_execute:
+      - damage: { amount: ad, type: physical, tags: [basic_attack], crit: 1 }
+
+  - id: sion_q
+    slot: Q
+    tags: [ability]
+    max_rank: 5
+    target: point
+    range: 550 # unverified
+    cast_time: 1.0
+    cooldown: "@q_cooldown[rank]"
+    costs: { mana: 45 }
+    lock_move: true
+    on_execute:
+      - area:
+          center: point
+          radius: 300 # unverified
+          effects:
+            - damage: { amount: "@q_damage[rank] + 0.9 * ad", type: physical, tags: [aoe] } # ratio unverified
+            # Knock-up and stun, modelled as one stun.
+            - stun: { duration: "@q_stun" }
+
+  - id: sion_w
+    slot: W
+    tags: [ability]
+    max_rank: 5
+    cooldown: "@w_cooldown[rank]"
+    costs: { mana: "@w_cost[rank]" }
+    on_cast:
+      - shield: { to: source, amount: "@w_shield[rank] + 0.4 * ap + @w_shield_hp[rank] * max_hp", duration: 6 }
+      - apply_buff: { buff: sion_w_fuse, to: source }
+
+  - id: sion_e
+    slot: E
+    tags: [ability]
+    max_rank: 5
+    target: point
+    cast_time: 0.25
+    cooldown: "@e_cooldown[rank]"
+    costs: { mana: "@e_cost[rank]" }
+    lock_move: true
+    on_execute:
+      - projectile:
+          speed: 1800 # unverified
+          radius: 80 # unverified
+          range: "@e_range"
+          on_hit:
+            - damage: { amount: "@e_damage[rank] + 0.55 * ap", type: magic }
+            - slow: { amount: "@e_slow[rank]", duration: 2.5 }
+            - apply_buff: { buff: sion_e_shred, to: target }
+
+  - id: sion_r
+    slot: R
+    tags: [ability, ultimate]
+    max_rank: 3
+    target: enemy
+    range: 1500 # the game's charge is far longer; capped for the open map
+    cooldown: "@r_cooldown[rank]"
+    costs: { mana: 100 }
+    lock_move: true
+    on_execute:
+      # The charge is a homing missile travelling at Sion's charge speed;
+      # Sion lands at the target when it arrives, then the impact hits.
+      - projectile:
+          speed: 950 # unverified
+          homing: true
+          on_hit:
+            - dash: { who: source, to: target }
+            - area:
+                center: target
+                radius: 300 # unverified
+                effects:
+                  - damage: { amount: "@r_damage[rank] + 0.4 * bonus_ad", type: physical, tags: [aoe] }
+                  - stun: { duration: "@r_stun" }
+
+buffs:
+  - id: sion_w_fuse
+    duration: 3
+    on_expire:
+      - area:
+          center: source
+          radius: 500 # Riot data (W range)
+          effects:
+            - damage: { amount: "@w_damage[rank] + 0.4 * ap + @w_damage_hp * target.max_hp", type: magic, tags: [aoe] }
+
+  - id: sion_e_shred
+    duration: 4
+    modifiers:
+      - { stat: armor, layer: pct_add, value: "-@e_shred" }
+
+ai:
+  attack: A
+  build: [plated_steelcaps, giants_belt, ruby_crystal, cloth_armor]
+  rules:
+    - { use: R, when: "distance > 400 and distance < 1200" }
+    - { use: Q, when: "distance < 450" }
+    - { use: E, when: "distance < 750" }
+    - { use: W, when: "distance < 500" }
